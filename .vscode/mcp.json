@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "elevenlabs": {
+      "type": "http",
+      "url": "https://api.elevenlabs.io/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:ELEVENLABS_API_KEY}"
+      }
+    }
+  }
+}
