@@ -94,7 +94,10 @@ const resolveVoiceId = (line, languageCode, bible) => {
   const character = bible?.characters?.find((c) => c.id === line.characterId);
   const fromCharacter = character?.voices?.[languageCode]?.voiceId ?? character?.voices?.[languageCode] ?? character?.voiceId;
   if (typeof fromCharacter === "string" && fromCharacter) return fromCharacter;
-  const fromProfile = bible?.voiceProfiles?.[languageCode]?.defaultVoiceId;
+  const profile = bible?.voiceProfiles?.[languageCode];
+  const fromGender = character?.gender ? profile?.voices?.[character.gender] : undefined;
+  if (fromGender) return fromGender;
+  const fromProfile = profile?.defaultVoiceId;
   if (fromProfile) return fromProfile;
   if (process.env.ELEVENLABS_DEFAULT_VOICE_ID) return process.env.ELEVENLABS_DEFAULT_VOICE_ID;
   return fail(

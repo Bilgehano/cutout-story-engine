@@ -148,7 +148,7 @@ A scene with no lines must provide `holdSec`. `voiceId` per line is optional (se
 - Endpoint: `POST https://api.elevenlabs.io/v1/text-to-speech/${voiceId}` with header `xi-api-key`.
 - Body: `{ "text", "model_id": "eleven_multilingual_v2", "language_code": draft.languageCode, "voice_settings": { ... } }`. If the model rejects `language_code`, `produce.mjs` retries once without it and logs a warning.
 - Language resolution order: `draft.languageCode` → `story-bible.json` `defaultLanguage`.
-- Voice resolution order per line: `line.voiceId` → character `voices[languageCode].voiceId` → character `voiceId` → `voiceProfiles[languageCode].defaultVoiceId` → `ELEVENLABS_DEFAULT_VOICE_ID`.
+- Voice resolution order per line: `line.voiceId` → character `voices[languageCode].voiceId` → character `voiceId` → `voiceProfiles[languageCode].voices[character.gender]` (`male` / `female`) → `voiceProfiles[languageCode].defaultVoiceId` → `ELEVENLABS_DEFAULT_VOICE_ID`.
 - Write dialogue, subtitles, and TTS text in the same language. Use native punctuation and diacritics (ä ö ü ß, ç ğ ı ö ş ü, ñ á é, à â ç é). Never transliterate.
 - Rhubarb recognizes English only with PocketSphinx; for every other language the pipeline uses `-r phonetic`.
 - Audio files are cached by a hash of text + voice + language + model; use `--force` to regenerate.

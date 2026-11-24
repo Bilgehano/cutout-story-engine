@@ -1,13 +1,49 @@
 {
-  "defaultLanguage": "en",
-  "voiceProfiles": {
-    "en": { "defaultVoiceId": "" },
-    "de": { "defaultVoiceId": "" },
-    "tr": { "defaultVoiceId": "" },
-    "es": { "defaultVoiceId": "" },
-    "fr": { "defaultVoiceId": "" }
-  },
-  "characters": [],
-  "environments": [],
-  "episodes": []
+    "defaultLanguage":  "en",
+    "voiceProfiles":  {
+                          "en":  {
+                                     "defaultVoiceId":  "9aLXbGY4BEHhMWw0SgDi",
+                                     "voices":  {
+                                                    "male":  "9aLXbGY4BEHhMWw0SgDi",
+                                                    "female":  "JudZUClAOU1jP3wA2eDG"
+                                                }
+                                 },
+                          "de":  {
+                                     "defaultVoiceId":  "9aLXbGY4BEHhMWw0SgDi",
+                                     "voices":  {
+                                                    "male":  "9aLXbGY4BEHhMWw0SgDi",
+                                                    "female":  "JudZUClAOU1jP3wA2eDG"
+                                                }
+                                 },
+                          "tr":  {
+                                     "defaultVoiceId":  "9aLXbGY4BEHhMWw0SgDi",
+                                     "voices":  {
+                                                    "male":  "9aLXbGY4BEHhMWw0SgDi",
+                                                    "female":  "JudZUClAOU1jP3wA2eDG"
+                                                }
+                                 },
+                          "es":  {
+                                     "defaultVoiceId":  "9aLXbGY4BEHhMWw0SgDi",
+                                     "voices":  {
+                                                    "male":  "9aLXbGY4BEHhMWw0SgDi",
+                                                    "female":  "JudZUClAOU1jP3wA2eDG"
+                                                }
+                                 },
+                          "fr":  {
+                                     "defaultVoiceId":  "9aLXbGY4BEHhMWw0SgDi",
+                                     "voices":  {
+                                                    "male":  "9aLXbGY4BEHhMWw0SgDi",
+                                                    "female":  "JudZUClAOU1jP3wA2eDG"
+                                                }
+                                 }
+                      },
+    "characters":  [
+
+                   ],
+    "environments":  [
+
+                     ],
+    "episodes":  [
+
+                 ]
 }
