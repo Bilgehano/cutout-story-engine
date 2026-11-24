@@ -1,0 +1,13 @@
+{
+  "defaultLanguage": "en",
+  "voiceProfiles": {
+    "en": { "defaultVoiceId": "" },
+    "de": { "defaultVoiceId": "" },
+    "tr": { "defaultVoiceId": "" },
+    "es": { "defaultVoiceId": "" },
+    "fr": { "defaultVoiceId": "" }
+  },
+  "characters": [],
+  "environments": [],
+  "episodes": []
+}
