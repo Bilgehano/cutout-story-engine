@@ -19,12 +19,17 @@ Run and report each result:
 
 If `ffmpeg`/`ffprobe`/`node` are missing, stop and tell the user how to install them for their OS.
 
-If `rhubarb` is missing, **STOP** and give these exact instructions before continuing:
+If `rhubarb` is missing, install it automatically. The user must NEVER have to download it manually:
 
-1. Open https://github.com/DanielSWolf/rhubarb-lip-sync/releases and download the latest release archive for the user's OS (`Rhubarb-Lip-Sync-<version>-Windows.zip`, `-macOS.zip` or `-Linux.zip`).
-2. Extract the archive and copy **everything** from the extracted folder (the `rhubarb`/`rhubarb.exe` binary AND its `res/` folder) into this repository's `bin/` folder, so the result is `bin/rhubarb` (or `bin/rhubarb.exe`) plus `bin/res/`.
-3. On macOS/Linux run `chmod +x bin/rhubarb`.
-4. Re-run `/setup`.
+1. Detect the OS (`process.platform` via `node -p "process.platform"`): `win32` -> asset suffix `Windows`, `darwin` -> `macOS`, `linux` -> `Linux`.
+2. Fetch `https://api.github.com/repos/DanielSWolf/rhubarb-lip-sync/releases/latest` (send a `User-Agent` header) and pick the asset whose name ends with `-<suffix>.zip` (e.g. `Rhubarb-Lip-Sync-<version>-Windows.zip`); use its `browser_download_url`.
+3. Download the zip to a temp file (e.g. in the OS temp directory).
+4. Extract ALL contents (the `rhubarb`/`rhubarb.exe` binary AND the required `res/` folder, plus any other bundled files) directly into `bin/`. Release zips usually wrap everything in one top-level folder: flatten it, so the result is `bin/rhubarb` (or `bin/rhubarb.exe`) plus `bin/res/` and never `bin/<wrapper>/...`. Use `Expand-Archive` on Windows or `unzip` on macOS/Linux (or an equivalent Node script), and do not touch `bin/.gitkeep`.
+5. Delete the temp zip (and any temporary extraction folder).
+6. On macOS/Linux run `chmod +x bin/rhubarb`.
+7. Verify by running `bin/rhubarb --version` (or `bin\rhubarb.exe --version`) and report the version.
+
+Only if the automated GitHub download fails because of network/firewall restrictions (API or asset request blocked, timeout, DNS/proxy error) do you **STOP**, state the error, and ask the user to download the matching zip from https://github.com/DanielSWolf/rhubarb-lip-sync/releases and extract it (binary plus `res/` folder) into `bin/`; then continue once they confirm.
 
 ## Step 2 - ElevenLabs API key & MCP
 
