@@ -2,7 +2,7 @@
 /**
  * produce.mjs - Episode production pipeline.
  *
- *   draft_script.json -> ElevenLabs TTS / ambience / SFX (cached by SHA-256)
+ *   locked session plan -> ElevenLabs TTS / ambience / SFX (cached by SHA-256)
  *                     -> ffmpeg + Rhubarb Lip Sync (ONLY for "dialogue" lines)
  *                     -> ffprobe durations -> src/data/episode.json
  *                     -> npx remotion render Episode out/episode_<n>.mp4
@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import { session } from "./session.mjs";
 
 const ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -29,25 +30,8 @@ dotenv.config({ path: path.join(ROOT, ".env"), quiet: true });
 const FPS = 30;
 const WIDTH = 1080;
 const HEIGHT = 1920;
-const SEGMENT_PAD_SEC = 0.25;
-const DEFAULT_LEAD_IN_SEC = 0.4;
-const DEFAULT_SFX_SEC = 2;
 const API = "https://api.elevenlabs.io/v1";
 const IS_WINDOWS = process.platform === "win32";
-
-const LINE_TYPES = new Set(["dialogue", "thought", "narration"]);
-const POSES = new Set(["standing", "sitting_desk"]);
-const TIMES_OF_DAY = new Set(["day", "sunset", "night"]);
-const EVENT_DEFAULT_FRAMES = {
-  phoneVibrate: 45,
-  doorState: 1,
-  lightFlicker: 60,
-  characterEnter: 24,
-  eyeLook: 1,
-  mood: 1,
-  jump: 12,
-};
-const CHARACTER_EVENTS = new Set(["characterEnter", "eyeLook", "mood", "jump"]);
 
 const stats = { ttsNew: 0, ttsCached: 0, sfxNew: 0, sfxCached: 0, ambNew: 0, ambCached: 0, chars: 0 };
 const warnings = [];
@@ -63,17 +47,6 @@ const fail = (message) => {
 
 const sha256 = (value) =>
   crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
-
-const readJson = (file, hint) => {
-  if (!fs.existsSync(file)) {
-    fail(`Missing ${file}. ${hint}`);
-  }
-  try {
-    return JSON.parse(fs.readFileSync(file, "utf8"));
-  } catch (error) {
-    return fail(`Invalid JSON in ${file}: ${error.message}`);
-  }
-};
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -118,21 +91,21 @@ async function cachedAudio(dir, hash, generate) {
   return { file, publicPath: `${dir}/${hash}.mp3`, cached: false };
 }
 
-async function synthesizeSpeech({ text, voiceId, modelId, languageCode }) {
-  const hash = sha256({ kind: "tts", modelId, voiceId, languageCode, text });
+async function synthesizeSpeech({ text, voiceId, modelId, languageCode, voiceSettings }) {
+  const hash = sha256({ kind: "tts", modelId, voiceId, languageCode, text, voiceSettings });
   const result = await cachedAudio("audio", hash, async () => {
     const endpoint = `/text-to-speech/${voiceId}`;
     try {
       return await elevenPost(
         endpoint,
-        { text, model_id: modelId, language_code: languageCode },
+        { text, model_id: modelId, language_code: languageCode, voice_settings: voiceSettings },
         "Text-to-speech",
       );
     } catch (error) {
       // Some models reject language enforcement; retry once without it.
       if ([400, 422].includes(error.status) && /language/i.test(error.message)) {
         warn(`Model ${modelId} rejected language_code; retrying without it.`);
-        return elevenPost(endpoint, { text, model_id: modelId }, "Text-to-speech");
+        return elevenPost(endpoint, { text, model_id: modelId, voice_settings: voiceSettings }, "Text-to-speech");
       }
       throw error;
     }
@@ -212,87 +185,6 @@ function runRhubarb(ttsFile, hash, rhubarbBinary) {
   return mouthCues;
 }
 
-const ACTION_NARRATION_HINTS =
-  /\b(phone|door|footsteps?|knock|buzz(?:es|ing)?|vibrat\w*|rings?|ringing)\b.*\b(opens?|closes?|vibrat\w*|buzz\w*|rings?|ringing|knocks?|slams?|creaks?)\b|\b(opens?|closes?|slams?)\s+the\s+door\b/i;
-
-function validateDraft(draft, bible) {
-  if (!Number.isInteger(draft.episodeNumber) || draft.episodeNumber < 1) {
-    fail('draft_script.json: "episodeNumber" must be a positive integer.');
-  }
-  if (typeof draft.languageCode !== "string" || !draft.languageCode) {
-    fail('draft_script.json: "languageCode" is required.');
-  }
-  if (!Array.isArray(draft.scenes) || draft.scenes.length === 0) {
-    fail('draft_script.json: "scenes" must be a non-empty array.');
-  }
-  const characterIds = new Set((bible.characters ?? []).map((c) => c.id));
-  const environmentIds = new Set((bible.environments ?? []).map((e) => e.id));
-
-  draft.scenes.forEach((scene, si) => {
-    const where = `scenes[${si}]`;
-    if (!environmentIds.has(scene.environmentId)) {
-      fail(`${where}: environmentId "${scene.environmentId}" is not in story-bible.json. Run /environment.`);
-    }
-    if (scene.timeOfDay !== undefined && !TIMES_OF_DAY.has(scene.timeOfDay)) {
-      fail(`${where}: timeOfDay must be day, sunset or night.`);
-    }
-    if (!Array.isArray(scene.characters) || scene.characters.length === 0) {
-      fail(`${where}: "characters" must list at least one on-screen character.`);
-    }
-    scene.characters.forEach((c) => {
-      if (!characterIds.has(c.characterId)) {
-        fail(`${where}: character "${c.characterId}" is not in story-bible.json. Run /character.`);
-      }
-      if (!POSES.has(c.pose ?? "standing")) {
-        fail(`${where}: pose of "${c.characterId}" must be standing or sitting_desk.`);
-      }
-    });
-    const onScreen = new Set(scene.characters.map((c) => c.characterId));
-    const lines = scene.lines ?? [];
-    lines.forEach((line, li) => {
-      const lw = `${where}.lines[${li}]`;
-      if (!LINE_TYPES.has(line.lineType)) {
-        fail(`${lw}: lineType must be dialogue, thought or narration.`);
-      }
-      if (typeof line.text !== "string" || !line.text.trim()) {
-        fail(`${lw}: "text" is required.`);
-      }
-      if (line.lineType === "narration") {
-        if (line.speakerId !== "narrator") {
-          fail(`${lw}: narration must use speakerId "narrator".`);
-        }
-      } else {
-        if (!characterIds.has(line.speakerId)) {
-          fail(`${lw}: speakerId "${line.speakerId}" is not a registered character.`);
-        }
-        if (!onScreen.has(line.speakerId)) {
-          warn(`${lw}: "${line.speakerId}" is not in scene.characters (off-screen voice).`);
-        }
-      }
-      if (ACTION_NARRATION_HINTS.test(line.text)) {
-        warn(`${lw}: text may describe a physical action. Use sfx/events instead (Show, Don't Tell).`);
-      }
-    });
-    (scene.sfx ?? []).forEach((cue, i) => {
-      if (typeof cue.prompt !== "string" || typeof cue.atSec !== "number" || cue.atSec < 0) {
-        fail(`${where}.sfx[${i}]: "prompt" (string) and "atSec" (number >= 0) are required.`);
-      }
-    });
-    (scene.events ?? []).forEach((event, i) => {
-      const ew = `${where}.events[${i}]`;
-      if (!(event.type in EVENT_DEFAULT_FRAMES)) {
-        fail(`${ew}: unknown event type "${event.type}".`);
-      }
-      if (typeof event.atSec !== "number" || event.atSec < 0) {
-        fail(`${ew}: "atSec" (number >= 0) is required.`);
-      }
-      if (CHARACTER_EVENTS.has(event.type) && !onScreen.has(event.characterId)) {
-        fail(`${ew}: "${event.type}" needs a characterId that is listed in scene.characters.`);
-      }
-    });
-  });
-}
-
 function resolveVoice(speakerId, bible) {
   if (speakerId === "narrator") {
     if (!bible.narratorVoiceId) {
@@ -307,22 +199,23 @@ function resolveVoice(speakerId, bible) {
   return character.voiceId;
 }
 
-async function produceScene(scene, sceneIndex, draft, bible, ctx) {
-  const leadInFrames = Math.round((scene.leadInSec ?? DEFAULT_LEAD_IN_SEC) * FPS);
-  let cursor = leadInFrames;
+async function produceScene(scene, sceneIndex, draft, ctx) {
   const segments = [];
 
   for (const [index, line] of (scene.lines ?? []).entries()) {
-    cursor += Math.round((line.pauseBeforeSec ?? 0) * FPS);
-    const voiceId = resolveVoice(line.speakerId, bible);
+    const voiceId = resolveVoice(line.speakerId, draft);
     const tts = await synthesizeSpeech({
       text: line.text,
       voiceId,
       modelId: ctx.modelId,
       languageCode: draft.languageCode,
+      voiceSettings: line.voiceSettings,
     });
     const audioDurationSec = probeDuration(tts.file);
-    const durationInFrames = Math.ceil((audioDurationSec + SEGMENT_PAD_SEC) * FPS);
+    const durationInFrames = Math.ceil(audioDurationSec * FPS);
+    if (durationInFrames > Math.round(line.durationSec * FPS)) {
+      fail(`${scene.id} line ${index + 1} needs ${durationInFrames} frames, exceeding its planned slot. Revise the timing or text in /create first.`);
+    }
     // Rhubarb runs ONLY for dialogue; thought and narration keep every mouth closed.
     const mouthCues =
       line.lineType === "dialogue"
@@ -335,12 +228,11 @@ async function produceScene(scene, sceneIndex, draft, bible, ctx) {
       speakerId: line.speakerId,
       text: line.text,
       audioFile: tts.publicPath,
-      startFrame: cursor,
+      startFrame: Math.round(line.atSec * FPS),
       durationInFrames,
       audioDurationSec,
       mouthCues,
     });
-    cursor += durationInFrames;
   }
 
   let ambienceFile = null;
@@ -348,24 +240,19 @@ async function produceScene(scene, sceneIndex, draft, bible, ctx) {
     ambienceFile = (await generateAmbience(scene.ambience)).publicPath;
   }
 
-  let end = Math.max(cursor, Math.ceil((scene.holdSec ?? 0) * FPS));
+  const end = scene.durationSec * FPS;
 
   const sfx = [];
   for (const cue of scene.sfx ?? []) {
-    const requested = Math.min(30, Math.max(0.5, cue.durationSec ?? DEFAULT_SFX_SEC));
-    const generated = await generateSfx(cue.prompt, requested);
+    const generated = await generateSfx(cue.prompt, cue.durationSec);
     const startFrame = Math.round(cue.atSec * FPS);
-    const durationInFrames = Math.ceil(probeDuration(generated.file) * FPS);
+    const durationInFrames = Math.round(cue.durationSec * FPS);
     sfx.push({ file: generated.publicPath, startFrame, durationInFrames });
-    end = Math.max(end, startFrame + durationInFrames);
   }
 
   const events = (scene.events ?? []).map((event) => {
     const frame = Math.round(event.atSec * FPS);
-    const durationInFrames = event.durationSec
-      ? Math.max(1, Math.round(event.durationSec * FPS))
-      : EVENT_DEFAULT_FRAMES[event.type];
-    end = Math.max(end, frame + Math.max(durationInFrames, 15));
+    const durationInFrames = Math.round(event.durationSec * FPS);
     return {
       type: event.type,
       frame,
@@ -385,14 +272,11 @@ async function produceScene(scene, sceneIndex, draft, bible, ctx) {
       pose: c.pose ?? "standing",
       x: c.x ?? 0.5,
       ...(c.flip ? { flip: true } : {}),
-      ...(c.gestureIntensity ? { gestureIntensity: c.gestureIntensity } : {}),
+      gestureIntensity: draft.characters.find((asset) => asset.id === c.characterId).gestureIntensity,
     })),
     durationInFrames: end,
     segments,
-    sfx: sfx.map((cue) => ({
-      ...cue,
-      durationInFrames: Math.min(cue.durationInFrames, Math.max(1, end - cue.startFrame)),
-    })),
+    sfx,
     events,
   };
 }
@@ -400,13 +284,7 @@ async function produceScene(scene, sceneIndex, draft, bible, ctx) {
 async function main() {
   const skipRender = process.argv.includes("--no-render");
 
-  if (!process.env.ELEVENLABS_API_KEY) {
-    fail("ELEVENLABS_API_KEY is missing from .env. Run /setup first.");
-  }
-  const bible = readJson("story-bible.json", "Run /setup first.");
-  const draft = readJson("src/data/draft_script.json", "Create the draft script with /video first.");
-  draft.languageCode = draft.languageCode || bible.defaultLanguage;
-  validateDraft(draft, bible);
+  const { dir, plan: draft, bible } = session("video");
 
   for (const dir of ["audio", "sfx", "ambience", "lipsync"]) {
     fs.mkdirSync(path.join("public", dir), { recursive: true });
@@ -425,7 +303,7 @@ async function main() {
   const scenes = [];
   let startFrame = 0;
   for (const [index, scene] of draft.scenes.entries()) {
-    const produced = await produceScene(scene, index, draft, bible, ctx);
+    const produced = await produceScene(scene, index, draft, ctx);
     produced.startFrame = startFrame;
     startFrame += produced.durationInFrames;
     scenes.push(produced);
@@ -441,6 +319,8 @@ async function main() {
     scenes,
   };
   fs.writeFileSync("src/data/episode.json", `${JSON.stringify(episode, null, 2)}\n`);
+  const props = `${dir}/episode.json`;
+  fs.copyFileSync("src/data/episode.json", props);
   log(
     `episode.json written: ${startFrame} frames (${(startFrame / FPS).toFixed(1)}s). ` +
       `TTS new/cached ${stats.ttsNew}/${stats.ttsCached}, SFX ${stats.sfxNew}/${stats.sfxCached}, ` +
@@ -455,7 +335,7 @@ async function main() {
   log(`Rendering ${output} ...`);
   const render = spawnSync(
     "npx",
-    ["remotion", "render", "src/index.ts", "Episode", output, "--props=src/data/episode.json"],
+    ["remotion", "render", "src/index.ts", "Episode", output, `--props=${props}`],
     { stdio: "inherit", shell: true },
   );
   if (render.status !== 0) {

@@ -68,4 +68,4 @@ Only if the automated GitHub download fails because of network/firewall restrict
 4. Copy `story-bible.template.json` to `story-bible.json` (do not overwrite an existing `story-bible.json` without asking) and set `planTier`, `defaultLanguage`, `narratorVoiceId`, keeping `characters: []`, `environments: []`, `episodes: []`.
 5. Run `npm run typecheck` and `npx remotion compositions src/index.ts`. Both must succeed; fix issues before continuing.
 6. Write `.setup-complete` containing the ISO timestamp.
-7. Confirm to the user that `/character`, `/environment`, `/video` and `/review` are now unlocked, and that the next step is `/character`.
+7. Confirm setup is complete. The next step is `/create`.

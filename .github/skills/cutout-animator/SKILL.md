@@ -105,7 +105,7 @@ Never voice physical actions or ambient events. Convey them with three channels:
 | `mood`           | a mood name                                   | eyebrow/face blend, held until the next `mood`    |
 | `jump`           | none                                          | 12-frame startle hop                              |
 
-Timeline: each scene starts with `leadInSec` (default 0.4s) of silence; lines play sequentially after it. `atSec` values are relative to the scene start, so place a `phoneVibrate` + sfx at e.g. `0.6` to have the buzz land before the first line. Scene length = max(lines end, `holdSec`, last sfx end, last event + 0.5s).
+Timeline: the locked plan fixes each scene length and every cue's scene-relative start and duration. Leave explicit silence between speech slots. Round times to 30 FPS. If synthesized speech exceeds its slot, revise the plan in `/create`.
 
 ## 6. Remotion animation rules
 
@@ -144,9 +144,9 @@ Inspect every PNG visually: proportions, outline weight, shading, layer order, s
 ## 9. Pipeline files
 
 - `scripts/produce.mjs`: ElevenLabs TTS / ambience / SFX (SHA-256 cached in `public/audio`, `public/ambience`, `public/sfx`), ffmpeg + Rhubarb for `dialogue` only (cached in `public/lipsync`), ffprobe durations, `src/data/episode.json`, render. `--no-render` stops after writing `episode.json`.
-- `schemas/draft_script.schema.json`: schema for `src/data/draft_script.json`.
+- `schemas/plan.schema.json`: schema for the active `sessions/episode-N/plan.json`. `scripts/session.mjs` validates it and enforces the setup, planning and asset gates.
 - Model: `eleven_flash_v2_5` on `planTier: "free"`, `eleven_multilingual_v2` otherwise; `language_code` is sent with every request.
-- `durationInFrames = Math.ceil((durationSec + 0.25) * 30)` per segment.
+- Speech occupies its measured audio duration within its planned slot; remaining frames are silent.
 
 ## 10. Scaffold specs (used by `/setup` when a file is missing)
 

@@ -14,8 +14,8 @@ Verify `.setup-complete`, `.env` (non-empty `ELEVENLABS_API_KEY`), `story-bible.
 
 ## Step 1 - Technical audit
 
-1. Pick the latest `out/episode_*.mp4`. Run `ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,r_frame_rate,sample_rate,channels -show_entries format=duration -of json <file>` and verify: `1080x1920`, `30/1` frame rate, one video stream, one audible audio stream, and a duration matching `totalDurationInFrames / 30` of `src/data/episode.json` (within 0.1s). Optionally confirm the audio is not silent with `ffmpeg -i <file> -af volumedetect -f null -`.
-2. Validate `src/data/episode.json`:
+1. Run `npm run session -- video`. Use only the returned episode's `out/episode_<N>.mp4` and `sessions/episode-N/episode.json`. If either is missing or predates the locked plan, stop and request `/video`. Run `ffprobe -v error -show_entries stream=codec_type,codec_name,width,height,r_frame_rate,sample_rate,channels -show_entries format=duration -of json <file>` and verify: `1080x1920`, `30/1` frame rate, audio when planned, and duration within 0.1s of the locked plan.
+2. Validate this episode's `episode.json`:
    - every `"thought"` and `"narration"` segment has exactly the closed-mouth cue `[{ "start": 0, "end": 999, "value": "X" }]`;
    - every `"dialogue"` segment has non-empty Rhubarb `mouthCues` using only `X A B C D E F G H`, starting at `0`;
    - `narration` segments use speaker `"narrator"`; every `speakerId`/`characterId` is registered in `story-bible.json`;
@@ -24,11 +24,11 @@ Verify `.setup-complete`, `.env` (non-empty `ELEVENLABS_API_KEY`), `story-bible.
 
 ## Step 2 - Visual frame audit
 
-Render three stills and inspect each one visually:
+Render three stills and inspect each one visually (use frame 0 if no dialogue):
 
-- `npx remotion still src/index.ts Episode out/qa_start.png --props=src/data/episode.json --frame=<first dialogue frame>`
-- `npx remotion still src/index.ts Episode out/qa_mid.png --props=src/data/episode.json --frame=<middle frame>`
-- `npx remotion still src/index.ts Episode out/qa_end.png --props=src/data/episode.json --frame=<last frame - 1>`
+- `npx remotion still src/index.ts Episode out/qa_start.png --props=sessions/episode-N/episode.json --frame=<first dialogue frame>`
+- `npx remotion still src/index.ts Episode out/qa_mid.png --props=sessions/episode-N/episode.json --frame=<middle frame>`
+- `npx remotion still src/index.ts Episode out/qa_end.png --props=sessions/episode-N/episode.json --frame=<last frame - 1>`
 
 Check for: subtitle overlap with social UI zones (subtitles must sit at `bottom: 360px`; nothing important in the bottom 360px or top 250px), layer z-index bugs (characters vs. desk/foreground), facial misalignment, open mouths during thought/narration, and characters outside the canvas.
 
