@@ -11,7 +11,7 @@ const example = JSON.parse(fs.readFileSync(new URL("../examples/episode-plan.jso
 
 test("perform the tagged line but caption only its words, with a gap for the pause", () => {
   const line = {...example.scenes[0].lines[0], text:"Wait ... Mama.", tags:["sorrowful","sighs"]};
-  const {body} = speechRequest(line, "voice", example.modelId, "de");
+  const {body} = speechRequest([line], 0, "voice", example.modelId, "de");
   assert.equal(body.text, "[sorrowful] [sighs] Wait ... Mama.");
   assert.deepEqual(body.voice_settings, line.voiceSettings);
   const chars = [...body.text];
@@ -19,6 +19,23 @@ test("perform the tagged line but caption only its words, with a gap for the pau
   const cues = captionCues({characters:chars, character_start_times_seconds:starts, character_end_times_seconds:starts.map(n=>n+0.05)}, line.text);
   assert.deepEqual(cues.map(c=>c.text), ["Wait","Mama."]);
   assert.ok(cues[1].start - cues[0].end > 1);
+});
+
+test("send nearby turns as context, not as words to speak or private thoughts to overhear", () => {
+  const line = { ...example.scenes[0].lines[0], lineType:"dialogue" };
+  const lines = [
+    {...line, speakerId:"Mother", text:"Alles okay?"},
+    {...line, text:"Ja, klar."},
+    {...line, speakerId:"Mother", text:"Sicher?"},
+    {...line, lineType:"thought", text:"Sie darf es nicht wissen."},
+  ];
+  const request = i => speechRequest(lines, i, "voice", example.modelId, "de").body;
+  assert.equal(request(1).previous_text, lines[0].text);
+  assert.equal(request(1).next_text, lines[2].text);
+  assert.equal(request(1).text, "[whispering] Ja, klar.");
+  assert.equal(request(0).previous_text, undefined);
+  assert.equal(request(2).next_text, undefined);
+  assert.equal(request(3).previous_text, undefined);
 });
 
 test("incomplete or inconsistent creative decisions cannot lock", () => {

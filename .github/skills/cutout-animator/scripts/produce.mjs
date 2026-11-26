@@ -92,8 +92,9 @@ async function cachedAudio(dir, hash, generate) {
   return { file, publicPath: `${dir}/${hash}.mp3`, cached: false };
 }
 
-async function synthesizeSpeech(line, voiceId, modelId, languageCode) {
-  const request = speechRequest(line, voiceId, modelId, languageCode);
+async function synthesizeSpeech(lines, index, voiceId, modelId, languageCode) {
+  const line = lines[index];
+  const request = speechRequest(lines, index, voiceId, modelId, languageCode);
   const hash = sha256({kind:"aligned-tts", ...request});
   const cueFile = path.join("public", "audio", `${hash}.json`);
   const result = await cachedAudio("audio", hash, async () => {
@@ -198,7 +199,7 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
 
   for (const [index, line] of (scene.lines ?? []).entries()) {
     const voiceId = resolveVoice(line.speakerId, draft);
-    const tts = await synthesizeSpeech(line, voiceId, ctx.modelId, draft.languageCode);
+    const tts = await synthesizeSpeech(scene.lines, index, voiceId, ctx.modelId, draft.languageCode);
     const audioDurationSec = probeDuration(tts.file);
     const durationInFrames = Math.ceil(audioDurationSec * FPS);
     if (durationInFrames > Math.round(line.durationSec * FPS)) {

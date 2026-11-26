@@ -11,7 +11,7 @@ A GitHub template for a modular **2D SVG cut-out puppet animation studio**: laye
 ## Workflow
 
 1. `/setup`: audits tools, stores your `ELEVENLABS_API_KEY`, configures the ElevenLabs MCP server, detects your plan, picks the storyteller voice, scaffolds Remotion and creates `story-bible.json`.
-2. `/create`: give it a premise or say "continue after episode 1". The AI checks earlier episodes, asks about preferences you want to set, and fills in the rest. It chooses the runtime, designs the cast and sets, assigns voices and writes a second-by-second plan. No media is generated.
+2. `/create`: give it a premise or say "continue after episode 1". The AI compares story approaches, chooses the hooks, cast, dialogue, voice direction and effects, then checks the script against your premise. You receive one scene-by-scene proposal to accept with `/video` or revise with feedback. No media is generated.
 3. `/video`: builds and visually checks missing puppets and sets, reuses returning artwork, and renders the locked plan. It sends each sentence with its own performance tags and settings. Captions follow speech timestamps and appear only for narration or selected key lines. If speech won't fit, it reports the line to revise rather than moving later beats.
 4. `/review`: audits the rendered episode and records approved continuity in the story bible.
 

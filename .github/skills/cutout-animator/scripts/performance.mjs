@@ -1,10 +1,18 @@
-export function speechRequest(line, voiceId, modelId, languageCode) {
+export function speechRequest(lines, index, voiceId, modelId, languageCode) {
+  const line = lines[index];
+  // Neighbouring spoken turns are continuity hints, never part of the rendered line.
+  const adjacent = (other) => other?.lineType === line.lineType &&
+    (line.lineType === "dialogue" || other.speakerId === line.speakerId);
+  const before = lines[index - 1];
+  const after = lines[index + 1];
   return {
     voiceId,
     body: {
       model_id: modelId, language_code: languageCode,
       text: `${line.tags.map(tag => `[${tag}]`).join(" ")} ${line.text}`,
       voice_settings: line.voiceSettings,
+      ...(adjacent(before) ? {previous_text: before.text} : {}),
+      ...(adjacent(after) ? {next_text: after.text} : {}),
     },
   };
 }
