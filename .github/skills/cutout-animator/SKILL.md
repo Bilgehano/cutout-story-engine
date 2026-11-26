@@ -145,7 +145,7 @@ Inspect every PNG visually: proportions, outline weight, shading, layer order, s
 
 - `scripts/produce.mjs`: ElevenLabs TTS / ambience / SFX (SHA-256 cached in `public/audio`, `public/ambience`, `public/sfx`), ffmpeg + Rhubarb for `dialogue` only (cached in `public/lipsync`), ffprobe durations, `src/data/episode.json`, render. `--no-render` stops after writing `episode.json`.
 - `schemas/plan.schema.json`: schema for the active `sessions/episode-N/plan.json`. `scripts/session.mjs` validates it and enforces the setup, planning and asset gates.
-- Model: `eleven_flash_v2_5` on `planTier: "free"`, `eleven_multilingual_v2` otherwise; `language_code` is sent with every request.
+- Use the plan's verified expressive model. TTS requests include bracketed performance tags and per-line settings; captions use clean source words and provider timestamps. Audio and alignment share a cache key.
 - Speech occupies its measured audio duration within its planned slot; remaining frames are silent.
 
 ## 10. Scaffold specs (used by `/setup` when a file is missing)
@@ -153,7 +153,7 @@ Inspect every PNG visually: proportions, outline weight, shading, layer order, s
 `/setup` first tries `git checkout -- <file>` for any missing tracked scaffold file. If that is impossible, regenerate from these specs:
 
 - `src/types.ts`: shared types/constants from section 1, `EpisodeData` types (`EpisodeScene`, `EpisodeSegment`, `EpisodeSfx`, `EpisodeEvent`), `emptyEpisode`.
-- `src/components/Subtitle.tsx`: absolute at `bottom: 360px`, white fill, `WebkitTextStroke: 14px #1E1B18` with `paintOrder: "stroke fill"`, balanced chunks of 3-4 words timed over the spoken frames, italic for `thought`.
+- `src/components/Subtitle.tsx`: compact sentence-case captions on a contrast panel at `bottom: 360px`. Show aligned phrases only during narration or explicitly highlighted lines. Leave pauses blank. Scene entry overlays and memory filters affect artwork, not captions.
 - `src/components/CharacterActor.tsx`: positions a registered character in the 600x1200 box at `x * 1080`, floor `1500`.
 - `src/EpisodeComposition.tsx`: per-scene `<Sequence>`; held-state springs for `eyeLook`/`mood`/`doorState`; windowed `phoneVibrate`/`lightFlicker`; `characterEnter`/`jump`; strict mouth isolation; three `<Audio>` layers (1.0 / 0.85 / 0.18 loop); `Subtitle`.
 - `src/CheckCompositions.tsx`, `src/Root.tsx`, `src/index.ts`: `Episode` (duration from `totalDurationInFrames` via `calculateMetadata`), `CharacterCheck`, `EnvironmentCheck` at 1080x1920 / 30 FPS.

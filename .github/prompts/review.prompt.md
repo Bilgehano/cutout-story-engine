@@ -33,5 +33,6 @@ Render three stills and inspect each one visually (use frame 0 if no dialogue):
 Check for: subtitle overlap with social UI zones (subtitles must sit at `bottom: 360px`; nothing important in the bottom 360px or top 250px), layer z-index bugs (characters vs. desk/foreground), facial misalignment, open mouths during thought/narration, and characters outside the canvas.
 
 ## Step 3 - Report & memory update
+Play the opening, each perspective change and the final beat with sound. Compare them to the locked hooks and turns: a memory should read differently with eyes closed as well as with sound muted. Listen for mechanical repeats, masked dialogue, spoken tags or a delivery that contradicts the line. Check captions against the audio on both sides of a pause: only narration or highlighted lines, no bracketed direction or placeholder dots. Report the scene/time of any mismatch; distinguish a planning revision from a rendering defect. If playback is unavailable, mark the listening audit unverified.
 
 Report findings in a short table (check, result, details). Fix real defects (re-run `/video` pipeline only if audio changed). Once the user approves, append to `episodes` in `story-bible.json`: `{ "episodeNumber", "title", "languageCode", "summary", "cliffhanger", "characters", "environments", "durationSec", "renderedAt" }`, so future episodes keep continuity.

@@ -6,6 +6,10 @@ agent: agent
 
 # /video
 
-1. Read `AGENTS.md` and the animator skill. Run `npm run session -- video`. Stop on failure and report the indicated prerequisite. Inspect the active `plan.json`; if a creative decision is unresolved, report its field and **Complete /create first.** Do not interview, recast, rewrite or retime.
-2. Run `npm run produce`. It uses this episode's plan, placed assets, voices, delivery settings and timed cues. If synthesized speech exceeds its slot, report the scene, line and needed time for `/create`; never shift later beats. For tool errors report the failed dependency rather than editing the plan. Keep audio caches.
-3. Report `out/episode_<N>.mp4`, the episode-specific props file and the producer's credit usage. Continue with `/review`.
+1. Read `AGENTS.md` and the animator skill. Run `npm run session -- status` and open the returned locked plan. Stop on failure. If a creative decision is unresolved, report its field and **Complete /create first.** Do not interview, recast, rewrite or retime.
+2. Execute both internal asset stages in this invocation (including for existing assets and revised locks):
+   - **Puppets:** verify registry mappings for returning cast. For each `missing.character` draw the specified named component, implement planned poses, visemes and mood controls, register by plan ID and upsert the snapshot without `source` in the story bible. Render `CharacterCheck` stills of planned poses and an open viseme into `out/episode_<N>_qa/`. Inspect and fix before `npm run session -- finish-character`.
+   - **Sets:** verify returning set registrations, build only `missing.environment`, register and upsert snapshots likewise. Render `EnvironmentCheck` for planned lighting, interactive states, floor alignment and occlusion with the cast. Inspect and fix before `npm run session -- finish-environment`. On resume, finish outstanding QA even if files already exist. Preserve returning designs and all audio caches.
+   - Typecheck changed TypeScript. Run `npm run session -- video` to verify both stage receipts against this plan.
+3. Run `npm run produce`. It sends the locked direction per line, then mixes the timed audio and renders. If speech exceeds its slot, report the scene, line and needed time for `/create`; never shift later beats. Report tool errors rather than editing the plan.
+4. Report `out/episode_<N>.mp4`, episode props and new/cached audio counts. Continue with `/review`.

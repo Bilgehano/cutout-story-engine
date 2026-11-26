@@ -4,6 +4,9 @@
   "brief": "A quiet mystery. Let the sound at the door interrupt a private thought.",
   "summary": "Mara waits in the hall with a key nobody was supposed to have.",
   "ending": "The locked door opens from the other side. The visitor is not yet visible.",
+  "openingHook": "Two steps stop outside a locked door. Mara has the only key.",
+  "closingHook": "The door opens anyway. Whoever is behind it knows the lock.",
+  "modelId": "eleven_v4",
   "durationSec": 5,
   "languageCode": "en",
   "narratorVoiceId": "EXAMPLE_STORYTELLER",
@@ -19,6 +22,7 @@
   }],
   "scenes": [{
     "id": "wait", "environmentId": "Hall", "timeOfDay": "night", "durationSec": 5,
+    "perspective":"present","transition":"cut","turn":"Mara trusts the key until the sound on the other side makes her doubt who gave it to her.",
     "beats": [
       "Mara stands left of the shut door, her brass key in the lamplight. Beyond the door, two approaching heels tap the tile and stop. Mara's own feet stay planted.",
       "On the missing third step, Mara looks right at the handle. Her brows draw together. We hear her thought close and clear above the distant vent; her lips stay closed.",
@@ -28,11 +32,11 @@
     ],
     "characters": [{"characterId":"Mara","pose":"standing","x":0.3,"flip":false}],
     "ambience": "Night interior, distant ventilation fan through a ceiling grille, soft steady motor hum with a faint hollow tile reflection; no footsteps, speech or door sounds",
-    "lines": [{"lineType":"thought","speakerId":"Mara","text":"Who else knows?","atSec":1,"durationSec":2,"voiceSettings":{"stability":0.65,"similarity_boost":0.8}}],
+    "lines": [{"lineType":"thought","speakerId":"Mara","text":"Who else knows?","intent":"She can barely form the question; keep the last word small.","tags":["whispering"],"atSec":1,"durationSec":2,"voiceSettings":{"stability":0.5,"similarity_boost":0.8}}],
     "sfx": [
       {"prompt":"Two leather heel taps on tile beyond a closed door, half a beat apart; first muffled, second slightly nearer, short hollow reflection, then an abrupt stop","atSec":0.1,"durationSec":0.85},
       {"prompt":"One dry metal hinge taking weight slowly, quiet onset rising to a thin squeal, catching short as the door stops; close, with a small tiled-room echo","atSec":3,"durationSec":0.85},
-      {"prompt":"Single distant low human vowel, breathy and wordless, swelling softly out of room tone then fading to air; an uneasy accent, no lyrics or instruments","atSec":4,"durationSec":1}
+      {"prompt":"Single distant low human vowel, breathy and wordless, swelling softly out of room tone then fading to air; an uneasy accent, no lyrics or instruments","atSec":4,"durationSec":1,"volume":0.35}
     ],
     "events": [
       {"type":"eyeLook","characterId":"Mara","value":"right","atSec":1,"durationSec":0.4},

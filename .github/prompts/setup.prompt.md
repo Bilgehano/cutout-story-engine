@@ -1,6 +1,6 @@
 ---
 name: setup
-description: One-time environment, ElevenLabs API/MCP and Remotion scaffold configuration. Unlocks /character, /environment, /video and /review.
+description: Verify the toolchain and a live ElevenLabs MCP connection before planning.
 agent: agent
 ---
 
@@ -33,21 +33,9 @@ Only if the automated GitHub download fails because of network/firewall restrict
 
 ## Step 2 - ElevenLabs API key & MCP
 
-1. Read `.env`. If `ELEVENLABS_API_KEY` is missing or empty, ask the user to paste their `ELEVENLABS_API_KEY` now, then write `.env` as `ELEVENLABS_API_KEY=<key>` (keep any other existing lines). Never echo the key back.
+1. Check for a non-empty `ELEVENLABS_API_KEY` in `.env` without printing it. If missing, ask the user to populate it locally using `.env.example`.
 2. Verify the key works: `GET https://api.elevenlabs.io/v1/user` with header `xi-api-key`. On 401, ask for a new key.
-3. Create or verify `.vscode/mcp.json` so it contains the official ElevenLabs MCP server:
-
-```json
-{
-  "servers": {
-    "elevenlabs": {
-      "type": "http",
-      "url": "https://api.elevenlabs.io/v1/mcp",
-      "headers": { "Authorization": "Bearer ${env:ELEVENLABS_API_KEY}" }
-    }
-  }
-}
-```
+3. Configure the [official hosted MCP server](https://elevenlabs.io/docs/eleven-api/resources/mcp-server) for the active client: `.mcp.json` for Copilot, `.vscode/mcp.json` for VS Code, using the tracked templates. Keep unrelated servers. The server uses OAuth, not the REST API key. Have the user authorize the matching ElevenLabs workspace in their client. Discover the server's tools and perform an authenticated, read-only voice lookup. If the server is absent, disconnected, or the lookup fails, stop before marking setup complete. A config file or successful REST request alone does not pass.
 
 ## Step 3 - Plan detection & storyteller voice
 
@@ -64,8 +52,8 @@ Only if the automated GitHub download fails because of network/firewall restrict
 
 1. If `package.json`, `tsconfig.json` or `remotion.config.ts` are missing, initialize a Remotion + TypeScript project (`type: "module"`, scripts `studio`, `typecheck`, `produce`). Pin all `remotion`/`@remotion/*` packages to the same exact version.
 2. Run `npm install` and make sure `@remotion/media-utils` and `dotenv` are installed (`npm install @remotion/media-utils dotenv` if not).
-3. Verify these scaffold files exist and are intact: `src/types.ts`, `src/components/Subtitle.tsx`, `src/components/CharacterActor.tsx`, `src/EpisodeComposition.tsx`, `src/CheckCompositions.tsx`, `src/Root.tsx`, `src/index.ts`, `src/components/characters/index.ts`, `src/components/backgrounds/index.ts`. If one is missing, restore it with `git checkout -- <file>`; if that is impossible, regenerate it from section 10 of `.github/skills/cutout-animator/SKILL.md`. `Subtitle.tsx` must sit in the social safe-zone at `bottom: 360px`, white fill, thick `#1E1B18` outer stroke via `paintOrder: "stroke fill"`, 3-4 words per chunk.
+3. Verify the scaffold listed in animator section 10, including the aligned caption renderer. Restore missing files from the template without replacing user changes.
 4. Copy `story-bible.template.json` to `story-bible.json` (do not overwrite an existing `story-bible.json` without asking) and set `planTier`, `defaultLanguage`, `narratorVoiceId`, keeping `characters: []`, `environments: []`, `episodes: []`.
 5. Run `npm run typecheck` and `npx remotion compositions src/index.ts`. Both must succeed; fix issues before continuing.
-6. Write `.setup-complete` containing the ISO timestamp.
+6. Only after the live MCP lookup and scaffold checks succeed, write `.setup-complete` as `elevenlabs-mcp:verified <ISO timestamp>`.
 7. Confirm setup is complete. The next step is `/create`.

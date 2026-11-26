@@ -1,6 +1,6 @@
 ---
 name: video
-description: Render the locked episode with its planned timing, cast, locations, voices and effects.
+description: Build and visually check missing puppets and sets, then render the locked episode.
 ---
 
 Follow `.github/prompts/video.prompt.md` from the repository root.

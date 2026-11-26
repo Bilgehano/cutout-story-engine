@@ -16,6 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import { session } from "./session.mjs";
+import { speechRequest, captionCues } from "./performance.mjs";
 
 const ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -59,7 +60,7 @@ async function elevenPost(endpoint, body, label) {
       headers: {
         "xi-api-key": apiKey,
         "Content-Type": "application/json",
-        Accept: "audio/mpeg",
+        Accept: endpoint.endsWith("/with-timestamps") ? "application/json" : "audio/mpeg",
       },
       body: JSON.stringify(body),
     });
@@ -91,32 +92,25 @@ async function cachedAudio(dir, hash, generate) {
   return { file, publicPath: `${dir}/${hash}.mp3`, cached: false };
 }
 
-async function synthesizeSpeech({ text, voiceId, modelId, languageCode, voiceSettings }) {
-  const hash = sha256({ kind: "tts", modelId, voiceId, languageCode, text, voiceSettings });
+async function synthesizeSpeech(line, voiceId, modelId, languageCode) {
+  const request = speechRequest(line, voiceId, modelId, languageCode);
+  const hash = sha256({kind:"aligned-tts", ...request});
+  const cueFile = path.join("public", "audio", `${hash}.json`);
   const result = await cachedAudio("audio", hash, async () => {
-    const endpoint = `/text-to-speech/${voiceId}`;
-    try {
-      return await elevenPost(
-        endpoint,
-        { text, model_id: modelId, language_code: languageCode, voice_settings: voiceSettings },
-        "Text-to-speech",
-      );
-    } catch (error) {
-      // Some models reject language enforcement; retry once without it.
-      if ([400, 422].includes(error.status) && /language/i.test(error.message)) {
-        warn(`Model ${modelId} rejected language_code; retrying without it.`);
-        return elevenPost(endpoint, { text, model_id: modelId, voice_settings: voiceSettings }, "Text-to-speech");
-      }
-      throw error;
-    }
+    const endpoint = `/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps`;
+    const { audio_base64, alignment } = JSON.parse((await elevenPost(endpoint, request.body, "Directed speech")).toString());
+    if (!audio_base64) fail("ElevenLabs returned no speech audio.");
+    fs.writeFileSync(cueFile, JSON.stringify(captionCues(alignment, line.text)));
+    return Buffer.from(audio_base64, "base64");
   });
   if (result.cached) {
     stats.ttsCached++;
   } else {
     stats.ttsNew++;
-    stats.chars += text.length;
+    stats.chars += request.body.text.length;
   }
-  return { ...result, hash };
+  if (!fs.existsSync(cueFile)) fail(`Missing speech alignment ${cueFile}; restore the cache pair before rendering.`);
+  return { ...result, hash, captions: JSON.parse(fs.readFileSync(cueFile, "utf8")) };
 }
 
 async function generateAmbience(prompt) {
@@ -204,13 +198,7 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
 
   for (const [index, line] of (scene.lines ?? []).entries()) {
     const voiceId = resolveVoice(line.speakerId, draft);
-    const tts = await synthesizeSpeech({
-      text: line.text,
-      voiceId,
-      modelId: ctx.modelId,
-      languageCode: draft.languageCode,
-      voiceSettings: line.voiceSettings,
-    });
+    const tts = await synthesizeSpeech(line, voiceId, ctx.modelId, draft.languageCode);
     const audioDurationSec = probeDuration(tts.file);
     const durationInFrames = Math.ceil(audioDurationSec * FPS);
     if (durationInFrames > Math.round(line.durationSec * FPS)) {
@@ -227,6 +215,7 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
       lineType: line.lineType,
       speakerId: line.speakerId,
       text: line.text,
+      captions: line.lineType === "narration" || line.highlight ? tts.captions : [],
       audioFile: tts.publicPath,
       startFrame: Math.round(line.atSec * FPS),
       durationInFrames,
@@ -247,7 +236,7 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
     const generated = await generateSfx(cue.prompt, cue.durationSec);
     const startFrame = Math.round(cue.atSec * FPS);
     const durationInFrames = Math.round(cue.durationSec * FPS);
-    sfx.push({ file: generated.publicPath, startFrame, durationInFrames });
+    sfx.push({ file: generated.publicPath, startFrame, durationInFrames, volume:cue.volume });
   }
 
   const events = (scene.events ?? []).map((event) => {
@@ -265,6 +254,8 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
   return {
     id: scene.id ?? `scene_${sceneIndex + 1}`,
     environmentId: scene.environmentId,
+    transition: scene.transition,
+    perspective: scene.perspective,
     timeOfDay: scene.timeOfDay ?? "day",
     ambienceFile,
     characters: scene.characters.map((c) => ({
@@ -291,7 +282,7 @@ async function main() {
   }
   fs.mkdirSync("out", { recursive: true });
 
-  const modelId = bible.planTier === "free" ? "eleven_flash_v2_5" : "eleven_multilingual_v2";
+  const modelId = draft.modelId;
   log(`Plan tier: ${bible.planTier} | TTS model: ${modelId} | language: ${draft.languageCode}`);
 
   let rhubarbPath = null;

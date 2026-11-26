@@ -17,6 +17,9 @@ function setup() {
   if (!fs.existsSync(".env") || !dotenv.parse(fs.readFileSync(".env")).ELEVENLABS_API_KEY?.trim()) missing.push(".env: ELEVENLABS_API_KEY");
   if (!["bin/rhubarb", "bin/rhubarb.exe"].some((p) => fs.existsSync(p))) missing.push("bin/rhubarb(.exe)");
   check(!missing.length, `Missing ${missing.join(", ")}. Run /setup first.`);
+  // The host owns the live OAuth connection; /create rechecks it on every invocation.
+  const receipt = fs.readFileSync(".setup-complete", "utf8");
+  check(receipt.startsWith("elevenlabs-mcp:verified "), "Missing ElevenLabs MCP verification. Run /setup first.");
   return json("story-bible.json");
 }
 
@@ -47,6 +50,8 @@ export function validatePlan(p, bible, number) {
     }
     let end = 0;
     for (const line of s.lines) {
+      require(!/[\[\]]/.test(line.text), "put performance tags in tags, not spoken text");
+      require(p.modelId !== "eleven_v3" || [0, 0.5, 1].includes(line.voiceSettings.stability), "v3 stability must be 0, 0.5 or 1");
       require(line.lineType === "narration" ? line.speakerId === "narrator" : cast.has(line.speakerId), "unknown speaker or wrong speech mode");
       require(frames(line.atSec) >= end, "speech slots must be chronological and non-overlapping");
       end = frames(line.atSec) + frames(line.durationSec);
@@ -111,8 +116,8 @@ export function session(command) {
     const stages = command === "video" ? Object.keys(kinds) : [command.slice(7)];
     for (const kind of stages) {
       check(Object.hasOwn(kinds, kind), `Unknown stage ${kind}.`);
-      check(!missing[kind].length, `Missing ${kind}: ${missing[kind].join(", ")}. Run /${kind} first.`);
-      if (command === "video") check(marked(kind), `Run /${kind} for this plan first.`);
+      check(!missing[kind].length, `Missing ${kind}: ${missing[kind].join(", ")}. Resume /video to build assets.`);
+      if (command === "video") check(marked(kind), `Resume /video: ${kind} QA is incomplete for this plan.`);
       else mark(kind);
     }
   } else check(command === "status", `Unknown session command: ${command}`);

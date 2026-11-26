@@ -4,9 +4,22 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
+import { speechRequest, captionCues } from "../.github/skills/cutout-animator/scripts/performance.mjs";
 import { session, validatePlan } from "../.github/skills/cutout-animator/scripts/session.mjs";
 
 const example = JSON.parse(fs.readFileSync(new URL("../examples/episode-plan.json", import.meta.url)));
+
+test("perform the tagged line but caption only its words, with a gap for the pause", () => {
+  const line = {...example.scenes[0].lines[0], text:"Wait ... Mama.", tags:["sorrowful","sighs"]};
+  const {body} = speechRequest(line, "voice", example.modelId, "de");
+  assert.equal(body.text, "[sorrowful] [sighs] Wait ... Mama.");
+  assert.deepEqual(body.voice_settings, line.voiceSettings);
+  const chars = [...body.text];
+  const starts = chars.map((_,i) => i * 0.05 + (i >= body.text.indexOf("Mama") ? 1 : 0));
+  const cues = captionCues({characters:chars, character_start_times_seconds:starts, character_end_times_seconds:starts.map(n=>n+0.05)}, line.text);
+  assert.deepEqual(cues.map(c=>c.text), ["Wait","Mama."]);
+  assert.ok(cues[1].start - cues[0].end > 1);
+});
 
 test("incomplete or inconsistent creative decisions cannot lock", () => {
   for (const edit of [
@@ -16,6 +29,10 @@ test("incomplete or inconsistent creative decisions cannot lock", () => {
     (p) => { p.scenes[0].sfx[0].atSec = 5; },
     (p) => { p.scenes[0].lines.push(p.scenes[0].lines[0]); },
     (p) => { p.durationSec++; },
+    (p) => delete p.openingHook,
+    (p) => delete p.scenes[0].transition,
+    (p) => { p.scenes[0].lines[0].text = "[sighs] Hello"; },
+    (p) => { p.modelId = "eleven_v3"; p.scenes[0].lines[0].voiceSettings.stability = 0.8; },
   ]) {
     const plan = structuredClone(example);
     edit(plan);
@@ -37,6 +54,8 @@ test("a sequel keeps its own plan, reuses built assets and renders only after bo
   save(".env", "ELEVENLABS_API_KEY=offline-test");
   const bible = { narratorVoiceId:example.narratorVoiceId, characters:[], environments:[], episodes:[] };
   save("story-bible.json", bible);
+  assert.throws(() => session("new"), /MCP verification/);
+  save(".setup-complete", "elevenlabs-mcp:verified 2026-01-01T00:00:00Z");
   const one = session("new").dir;
   assert.throws(() => session("status"), /Complete \/create/);
   save(`${one}/plan.json`, example);
@@ -68,7 +87,7 @@ test("a sequel keeps its own plan, reuses built assets and renders only after bo
   bible.environments.push(yard);
   save("src/components/backgrounds/Yard.tsx", "// fixture");
   save("story-bible.json", bible);
-  assert.throws(() => session("video"), /Run \/environment/);
+  assert.throws(() => session("video"), /environment QA is incomplete/);
   session("finish-environment");
 
   const skill = ".github/skills/cutout-animator";
@@ -86,5 +105,5 @@ test("a sequel keeps its own plan, reuses built assets and renders only after bo
   save(`${two}/plan.json`, sequel);
   assert.throws(() => session("video"), /Complete \/create/);
   session("lock");
-  assert.throws(() => session("video"), /Run \/character/);
+  assert.throws(() => session("video"), /character QA is incomplete/);
 });

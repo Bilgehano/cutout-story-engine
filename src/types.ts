@@ -77,6 +77,7 @@ export type EpisodeEvent = {
 };
 
 export type EpisodeSegment = {
+  captions?: {text: string; start: number; end: number}[];
   index: number;
   lineType: LineType;
   speakerId: string;
@@ -90,6 +91,7 @@ export type EpisodeSegment = {
 };
 
 export type EpisodeSfx = {
+  volume?: number;
   file: string;
   startFrame: number;
   durationInFrames: number;
@@ -105,6 +107,8 @@ export type SceneCharacter = {
 };
 
 export type EpisodeScene = {
+  transition?: "cut" | "blink" | "flash" | "fadeFromBlack";
+  perspective?: "present" | "memory";
   id: string;
   environmentId: string;
   timeOfDay: TimeOfDay;

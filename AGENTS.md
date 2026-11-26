@@ -4,16 +4,16 @@ These rules are non-negotiable. All repository content (docs, prompts, code, com
 
 ## 1. Hard `/setup` Gatekeeper
 
-Before executing `/create`, `/character`, `/environment`, `/video` or `/review`, verify that ALL of these exist:
+Before executing `/create`, `/video` or `/review`, verify that ALL of these exist:
 
-- `.setup-complete`
+- `.setup-complete` with the MCP verification receipt; `/create` must also pass its live, read-only MCP check
 - `.env` containing a non-empty `ELEVENLABS_API_KEY`
 - `story-bible.json`
 - `bin/rhubarb` (or `bin/rhubarb.exe` on Windows)
 
 If ANY are missing: **HALT IMMEDIATELY**, list exactly what is missing, and instruct the user to run `/setup` first. Do not write code, audio or scripts.
 
-After setup, `/create` owns every creative decision. The newest numbered `sessions/episode-N` is active, even if unfinished. `/character`, `/environment` and `/video` consume its locked plan without interviews or creative substitutions. Route unresolved planning decisions to `/create`. Generated components and audio are shared; the brief, design snapshots, timeline, stage receipts and produced episode data belong to their episode.
+After setup, `/create` owns every creative decision. The newest numbered `sessions/episode-N` is active, even if unfinished. `/video` builds missing puppets and sets, checks their stills and renders the locked plan without interviews or creative substitutions. Route unresolved planning decisions to `/create`. Generated components and audio are shared; the brief, design snapshots, timeline, stage receipts and produced episode data belong to their episode.
 
 ## 2. 100% Code-Driven SVG Architecture
 

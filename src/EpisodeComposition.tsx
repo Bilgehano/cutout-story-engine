@@ -236,8 +236,16 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
     );
   });
 
+  const progress = Math.min(1, frame / 14);
+  const time = activeSegment ? (frame - activeSegment.startFrame) / fps : -1;
+  const caption = activeSegment?.captions?.find(cue => time >= cue.start && time < cue.end);
   return (
     <AbsoluteFill>
+      <AbsoluteFill style={{
+        filter: scene.perspective === "memory" ? "sepia(0.45) saturate(0.7) blur(1.6px)" : undefined,
+        clipPath: scene.transition === "blink" ? `inset(${50 * (1 - progress)}% 0)` : undefined,
+        backgroundColor: "#000",
+      }}>
       {Background ? (
         <Background
           timeOfDay={scene.timeOfDay}
@@ -260,6 +268,10 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
           Environment "{scene.environmentId}" is not registered
         </AbsoluteFill>
       )}
+      </AbsoluteFill>
+      {(scene.transition === "flash" || scene.transition === "fadeFromBlack") && progress < 1 ? (
+        <AbsoluteFill style={{background:scene.transition === "flash" ? "#fff6e3" : "#000", opacity:1-progress}} />
+      ) : null}
 
       {scene.segments.map((segment) => (
         <Sequence
@@ -276,7 +288,7 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
           from={cue.startFrame}
           durationInFrames={cue.durationInFrames}
         >
-          <Audio src={staticFile(cue.file)} volume={SFX_VOLUME} />
+          <Audio src={staticFile(cue.file)} volume={cue.volume ?? SFX_VOLUME} />
         </Sequence>
       ))}
       {scene.ambienceFile ? (
@@ -287,14 +299,7 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
         />
       ) : null}
 
-      {activeSegment ? (
-        <Subtitle
-          text={activeSegment.text}
-          frame={frame - activeSegment.startFrame}
-          spokenFrames={Math.ceil(activeSegment.audioDurationSec * fps)}
-          italic={activeSegment.lineType === "thought"}
-        />
-      ) : null}
+      <Subtitle text={caption?.text} />
     </AbsoluteFill>
   );
 };
