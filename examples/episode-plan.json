@@ -13,7 +13,7 @@
   "characters": [{
     "id": "Mara", "component": "Mara", "source": "build", "name": "Mara", "role": "caretaker",
     "design": "Tall, angular silhouette; warm brown skin, square glasses, short charcoal curls. Boxy rust jacket over cream overalls; brass key pinned to the left lapel. Restrained hand movements.",
-    "voiceId": "EXAMPLE_MARA", "poses": ["standing"], "gestureIntensity": "calm"
+    "voiceId": "EXAMPLE_MARA", "voiceSettings": {"stability":0.5,"similarity_boost":0.8}, "outfits": ["work","evening"], "conditions": ["tired"], "poses": ["standing"], "gestureIntensity": "calm"
   }],
   "environments": [{
     "id": "Hall", "component": "Hall", "source": "build", "name": "Service hallway",
@@ -24,15 +24,13 @@
     "id": "wait", "environmentId": "Hall", "timeOfDay": "night", "durationSec": 5,
     "perspective":"present","transition":"cut","turn":"Mara trusts the key until the sound on the other side makes her doubt who gave it to her.",
     "beats": [
-      "Mara stands left of the shut door, her brass key in the lamplight. Beyond the door, two approaching heels tap the tile and stop. Mara's own feet stay planted.",
-      "On the missing third step, Mara looks right at the handle. Her brows draw together. We hear her thought close and clear above the distant vent; her lips stay closed.",
-      "Hold on her eyes and the still handle as the question ends. No answering step; the vent is the only sound left.",
-      "The door eases ajar on the right. A thin hinge squeal breaks the quiet, then catches and stops. Mara doesn't move.",
-      "Hold on the black gap. A low, wordless human tone swells behind the room sound, then fades. Cut before a face appears."
+      "Mara waits left of the shut door, key in the lamplight; heels approach outside and stop.",
+      "On the missing third step she looks at the handle, brows drawn, thinking with closed lips.",
+      "The door eases ajar; hold on the black gap and cut before a face appears."
     ],
     "characters": [{"characterId":"Mara","pose":"standing","x":0.3,"flip":false}],
     "ambience": "Night interior, distant ventilation fan through a ceiling grille, soft steady motor hum with a faint hollow tile reflection; no footsteps, speech or door sounds",
-    "lines": [{"lineType":"thought","speakerId":"Mara","text":"Who else knows?","intent":"She can barely form the question; keep the last word small.","tags":["whispering"],"atSec":1,"durationSec":2,"voiceSettings":{"stability":0.5,"similarity_boost":0.8}}],
+    "lines": [{"lineType":"thought","speakerId":"Mara","text":"Who else knows?","intent":"She can barely form the question; keep the last word small.","tags":["whispering"],"atSec":1,"durationSec":2}],
     "sfx": [
       {"prompt":"Two leather heel taps on tile beyond a closed door, half a beat apart; first muffled, second slightly nearer, short hollow reflection, then an abrupt stop","atSec":0.1,"durationSec":0.85},
       {"prompt":"One dry metal hinge taking weight slowly, quiet onset rising to a thin squeal, catching short as the door stops; close, with a small tiled-room echo","atSec":3,"durationSec":0.85},

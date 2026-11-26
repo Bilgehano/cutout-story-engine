@@ -38,6 +38,10 @@ export type CharacterProps = {
   /** 0..1 spring progress from prevMood to mood. */
   moodBlend: number;
   gestureIntensity?: GestureIntensity;
+  /** Named outfit from the plan; undefined means the default look. */
+  outfit?: string;
+  /** Visible states such as "acne" or "tired"; several can apply at once. */
+  conditions?: string[];
   /** Mirror the character horizontally. */
   flip?: boolean;
   /** Optional color overrides (hair, skin, outfit, ...). */
@@ -104,6 +108,8 @@ export type SceneCharacter = {
   x: number;
   flip?: boolean;
   gestureIntensity?: GestureIntensity;
+  outfit?: string;
+  conditions?: string[];
 };
 
 export type EpisodeScene = {

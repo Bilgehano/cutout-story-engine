@@ -1,6 +1,6 @@
 # AGENTS.md - Workspace Constitution
 
-These rules are non-negotiable. All repository content (docs, prompts, code, comments, JSON, logs) is written in English. Also read `.github/skills/cutout-animator/SKILL.md` in every session.
+These rules are non-negotiable. All repository content (docs, prompts, code, comments, JSON, logs) is written in English. Core rules are in `.github/skills/cutout-animator/SKILL.md`; read it once, and its reference files only when a command lists them.
 
 ## 1. Hard `/setup` Gatekeeper
 

@@ -6,7 +6,7 @@ agent: agent
 
 # /setup
 
-Read `AGENTS.md` and `.github/skills/cutout-animator/SKILL.md` first. Run the steps in order. Stop and report on any failure; never fake a passing check.
+Run the steps in order. Stop and report on any failure; never fake a passing check.
 
 ## Step 1 - Binary & system audit
 
@@ -52,8 +52,8 @@ Only if the automated GitHub download fails because of network/firewall restrict
 
 1. If `package.json`, `tsconfig.json` or `remotion.config.ts` are missing, initialize a Remotion + TypeScript project (`type: "module"`, scripts `studio`, `typecheck`, `produce`). Pin all `remotion`/`@remotion/*` packages to the same exact version.
 2. Run `npm install` and make sure `@remotion/media-utils` and `dotenv` are installed (`npm install @remotion/media-utils dotenv` if not).
-3. Verify the scaffold listed in animator section 10, including the aligned caption renderer. Restore missing files from the template without replacing user changes.
-4. Copy `story-bible.template.json` to `story-bible.json` (do not overwrite an existing `story-bible.json` without asking) and set `planTier`, `defaultLanguage`, `narratorVoiceId`, keeping `characters: []`, `environments: []`, `episodes: []`.
+3. Verify the scaffold listed in `reference/scaffold.md`, including the aligned caption renderer. Restore missing files from the template without replacing user changes.
+4. Copy `story-bible.template.json` to `story-bible.json` (do not overwrite an existing `story-bible.json` without asking) and set `planTier`, `defaultLanguage`, `narratorVoiceId` (leave `voiceModel` null; the first lock pins it), keeping `characters: []`, `environments: []`, `episodes: []`.
 5. Run `npm run typecheck` and `npx remotion compositions src/index.ts`. Both must succeed; fix issues before continuing.
 6. Only after the live MCP lookup and scaffold checks succeed, write `.setup-complete` as `elevenlabs-mcp:verified <ISO timestamp>`.
 7. Confirm setup is complete. The next step is `/create`.

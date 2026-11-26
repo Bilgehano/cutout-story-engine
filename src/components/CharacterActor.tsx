@@ -17,6 +17,8 @@ export type CharacterActorProps = {
   /** Horizontal anchor as a fraction of the canvas width. */
   x: number;
   flip?: boolean;
+  outfit?: string;
+  conditions?: string[];
   gestureIntensity?: GestureIntensity;
   mouthShape: MouthShape;
   isTalking: boolean;

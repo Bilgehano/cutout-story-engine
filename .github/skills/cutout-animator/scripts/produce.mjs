@@ -164,14 +164,16 @@ function resolveRhubarb() {
 
 const CLOSED_MOUTH_CUES = () => [{ start: 0, end: 999, value: "X" }];
 
-function runRhubarb(ttsFile, hash, rhubarbBinary) {
-  const cacheFile = path.join("public", "lipsync", `${hash}.json`);
+function runRhubarb(ttsFile, hash, rhubarbBinary, languageCode) {
+  // Rhubarb's default recognizer only understands English; "phonetic" is for every other language.
+  const recognizer = /^en\b/i.test(languageCode) ? "pocketSphinx" : "phonetic";
+  const cacheFile = path.join("public", "lipsync", `${hash}.${recognizer}.json`);
   if (fs.existsSync(cacheFile)) {
     return JSON.parse(fs.readFileSync(cacheFile, "utf8")).mouthCues;
   }
   const wavFile = path.join("public", "lipsync", `${hash}.wav`);
   execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", ttsFile, "-ar", "16000", "-ac", "1", wavFile]);
-  execFileSync(rhubarbBinary, ["-f", "json", "-q", "-o", cacheFile, wavFile], { stdio: "inherit" });
+  execFileSync(rhubarbBinary, ["-r", recognizer, "-f", "json", "-q", "-o", cacheFile, wavFile], { stdio: "inherit" });
   fs.rmSync(wavFile, { force: true });
   const { mouthCues } = JSON.parse(fs.readFileSync(cacheFile, "utf8"));
   if (!Array.isArray(mouthCues) || mouthCues.length === 0) {
@@ -180,25 +182,26 @@ function runRhubarb(ttsFile, hash, rhubarbBinary) {
   return mouthCues;
 }
 
-function resolveVoice(speakerId, bible) {
+/** Voice IDs come from the story bible; line settings were validated against each baseline at lock time. */
+function resolveVoice(speakerId, plan, bible) {
   if (speakerId === "narrator") {
     if (!bible.narratorVoiceId) {
       fail('story-bible.json has no "narratorVoiceId". Run /setup.');
     }
-    return bible.narratorVoiceId;
+    return { voiceId: bible.narratorVoiceId };
   }
-  const character = bible.characters.find((c) => c.id === speakerId);
+  const character = bible.characters.find((c) => c.id === speakerId) ?? plan.characters.find((c) => c.id === speakerId);
   if (!character?.voiceId) {
-    fail(`Character "${speakerId}" has no voiceId in story-bible.json.`);
+    fail(`Character "${speakerId}" has no voiceId.`);
   }
-  return character.voiceId;
+  return { voiceId: character.voiceId };
 }
 
 async function produceScene(scene, sceneIndex, draft, ctx) {
   const segments = [];
 
   for (const [index, line] of (scene.lines ?? []).entries()) {
-    const voiceId = resolveVoice(line.speakerId, draft);
+    const { voiceId } = resolveVoice(line.speakerId, draft, ctx.bible);
     const tts = await synthesizeSpeech(scene.lines, index, voiceId, ctx.modelId, draft.languageCode);
     const audioDurationSec = probeDuration(tts.file);
     const durationInFrames = Math.ceil(audioDurationSec * FPS);
@@ -208,9 +211,8 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
     // Rhubarb runs ONLY for dialogue; thought and narration keep every mouth closed.
     const mouthCues =
       line.lineType === "dialogue"
-        ? runRhubarb(tts.file, tts.hash, ctx.rhubarb())
+        ? runRhubarb(tts.file, tts.hash, ctx.rhubarb(), draft.languageCode)
         : CLOSED_MOUTH_CUES();
-    log(`scene ${sceneIndex + 1} line ${index + 1} [${line.lineType}] ${audioDurationSec.toFixed(2)}s ${tts.cached ? "(cached)" : "(new)"}`);
     segments.push({
       index,
       lineType: line.lineType,
@@ -264,6 +266,8 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
       pose: c.pose ?? "standing",
       x: c.x ?? 0.5,
       ...(c.flip ? { flip: true } : {}),
+      ...(c.outfit ? { outfit: c.outfit } : {}),
+      ...(c.conditions ? { conditions: c.conditions } : {}),
       gestureIntensity: draft.characters.find((asset) => asset.id === c.characterId).gestureIntensity,
     })),
     durationInFrames: end,
@@ -289,6 +293,7 @@ async function main() {
   let rhubarbPath = null;
   const ctx = {
     modelId,
+    bible,
     rhubarb: () => (rhubarbPath ??= resolveRhubarb()),
   };
 
@@ -327,7 +332,7 @@ async function main() {
   log(`Rendering ${output} ...`);
   const render = spawnSync(
     "npx",
-    ["remotion", "render", "src/index.ts", "Episode", output, `--props=${props}`],
+    ["remotion", "render", "src/index.ts", "Episode", output, `--props=${props}`, "--log=error"],
     { stdio: "inherit", shell: true },
   );
   if (render.status !== 0) {
