@@ -222,6 +222,8 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
         pose={sceneCharacter.pose}
         x={sceneCharacter.x}
         flip={sceneCharacter.flip}
+        outfit={sceneCharacter.outfit}
+        conditions={sceneCharacter.conditions}
         gestureIntensity={sceneCharacter.gestureIntensity}
         mouthShape={mouth.mouthShape}
         isTalking={mouth.isTalking}

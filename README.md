@@ -19,6 +19,14 @@ Each new episode has its own local `sessions/episode-N/brief.md` and `plan.json`
 
 See the [example shooting script](examples/episode-plan.json) for hooks, scene turns, transitions, voice direction and sound cues. Upgrading? Keep your story bible and assets, rerun `/setup` to verify MCP, then revise old plans in `/create` before rendering. Different speech models or delivery settings require fresh audio generation.
 
+## Series consistency
+
+- `/video` fingerprints approved artwork. A changed file stops the pipeline. To change it on purpose: `npm run session -- unlock <id>`.
+- Outfits and conditions (for example `acne`, `tired`) are switches on the same character.
+- Voice ID, baseline settings and model live in `story-bible.json`; a line may only move slightly from its speaker's baseline.
+- Non-English episodes (for example German, `de`) use Rhubarb's `phonetic` recognizer.
+- Characters stay out of Git, so back up `src/components/`, `story-bible.json` and `public/audio` yourself.
+
 ## Rules at a glance
 
 See [`AGENTS.md`](AGENTS.md) and [`.github/skills/cutout-animator/SKILL.md`](.github/skills/cutout-animator/SKILL.md). In short: no external image/video generators, `refs/` are style-only, never narrate physical actions (use SFX + ambience + animation), only `dialogue` moves mouths.

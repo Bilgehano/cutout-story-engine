@@ -6,7 +6,7 @@ agent: agent
 
 # /review
 
-Read `AGENTS.md` and `.github/skills/cutout-animator/SKILL.md` first.
+Read `reference/animation.md`.
 
 ## Gatekeeper
 
@@ -26,9 +26,9 @@ Verify `.setup-complete`, `.env` (non-empty `ELEVENLABS_API_KEY`), `story-bible.
 
 Render three stills and inspect each one visually (use frame 0 if no dialogue):
 
-- `npx remotion still src/index.ts Episode out/qa_start.png --props=sessions/episode-N/episode.json --frame=<first dialogue frame>`
-- `npx remotion still src/index.ts Episode out/qa_mid.png --props=sessions/episode-N/episode.json --frame=<middle frame>`
-- `npx remotion still src/index.ts Episode out/qa_end.png --props=sessions/episode-N/episode.json --frame=<last frame - 1>`
+- `npx remotion still src/index.ts Episode out/qa_start.png --props=sessions/episode-N/episode.json --scale=0.33 --log=error --frame=<first dialogue frame>`
+- `npx remotion still src/index.ts Episode out/qa_mid.png --props=sessions/episode-N/episode.json --scale=0.33 --log=error --frame=<middle frame>`
+- `npx remotion still src/index.ts Episode out/qa_end.png --props=sessions/episode-N/episode.json --scale=0.33 --log=error --frame=<last frame - 1>`
 
 Check for: subtitle overlap with social UI zones (subtitles must sit at `bottom: 360px`; nothing important in the bottom 360px or top 250px), layer z-index bugs (characters vs. desk/foreground), facial misalignment, open mouths during thought/narration, and characters outside the canvas.
 
