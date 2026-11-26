@@ -1,6 +1,6 @@
 # Cutout Story Engine
 
-A GitHub template for a modular **2D SVG cut-out puppet animation studio**: layered React + SVG characters and environments rendered by [Remotion](https://www.remotion.dev) at 1080x1920 / 30 FPS, voiced by [ElevenLabs](https://elevenlabs.io) and lip-synced with [Rhubarb Lip Sync](https://github.com/DanielSWolf/rhubarb-lip-sync). Everything is driven by Copilot slash commands.
+A GitHub template for a modular **2D SVG cut-out puppet animation studio**: layered React + SVG characters and environments rendered by [Remotion](https://www.remotion.dev) at 1080x1920 / 30 FPS, voiced by [ElevenLabs](https://elevenlabs.io) and lip-synced with [Rhubarb Lip Sync](https://github.com/DanielSWolf/rhubarb-lip-sync). Configured for **Google Antigravity** (App, CLI, and IDE) via `.agents/` while keeping the shared skills and prompts in `.github/` intact.
 
 ## Prerequisites
 
