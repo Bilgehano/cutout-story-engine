@@ -26,5 +26,6 @@ Inspect every PNG visually: proportions, outline weight, shading, layer order, s
 - `scripts/produce.mjs`: ElevenLabs TTS / ambience / SFX (SHA-256 cached in `public/audio`, `public/ambience`, `public/sfx`), ffmpeg + Rhubarb for `dialogue` only (cached in `public/lipsync`), ffprobe durations, `src/data/episode.json`, render. `--no-render` stops after writing `episode.json`.
 - `scripts/plan.schema.json`: schema for the active `sessions/episode-N/plan.json`. `scripts/session.mjs` validates it and enforces the setup, planning and asset gates.
 - Use the plan's verified expressive model. TTS requests include bracketed performance tags and per-line settings; captions use clean source words and provider timestamps. Audio and alignment share a cache key.
-- Speech occupies its measured audio duration within its planned slot; remaining frames are silent.
+- Speech slots are fitted to the measured audio (see `sound.md`, Timeline); `timing.json` records the changes.
+- After rendering, `produce` limits audio peaks to -1.5 dBFS; `npm run sheet` makes a contact sheet for visual QA.
 

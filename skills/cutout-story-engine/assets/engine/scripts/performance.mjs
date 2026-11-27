@@ -43,3 +43,36 @@ export function captionCues(alignment, spokenText) {
   }
   return cues;
 }
+
+const FPS = 30;
+/** Silence kept after a take that overflowed its slot, and the slack above which a slot is tightened. */
+export const FIT_PAD = 0.12;
+export const FIT_SLACK = 0.35;
+const round = (seconds) => Math.round(seconds * FPS) / FPS;
+
+/**
+ * Fits a scene to its recorded speech. Every cue that starts at or after the end of a resized slot
+ * moves by the same amount, so reactions, sound effects and camera moves keep their spacing.
+ */
+export function fitScene(scene, spoken, changes = []) {
+  const fitted = structuredClone(scene);
+  const cues = () => [...fitted.lines, ...(fitted.sfx ?? []), ...(fitted.events ?? [])];
+  fitted.lines.forEach((line, index) => {
+    // A take that fits is left alone; one that overflows gets a short breath after it, and a slot
+    // with more than FIT_SLACK of silence after the take keeps only that breath.
+    const take = Math.ceil(spoken[index] * FPS) / FPS;
+    let delta = 0;
+    if (take > line.durationSec + 1e-9) delta = take + FIT_PAD - line.durationSec;
+    else if (line.durationSec - take > FIT_SLACK) delta = -(line.durationSec - take - FIT_PAD);
+    delta = round(delta);
+    if (!delta) return;
+    const end = line.atSec + line.durationSec;
+    for (const cue of cues()) if (cue !== line && cue.atSec >= end - 1e-6) cue.atSec = round(Math.max(0, cue.atSec + delta));
+    line.durationSec = round(line.durationSec + delta);
+    fitted.durationSec = round(Math.max(1, fitted.durationSec + delta));
+    changes.push({ scene: scene.id, line: index + 1, text: line.text, seconds: delta });
+  });
+  // A cue that ran past the old end (for example a camera move) still has to fit inside the scene.
+  for (const cue of cues()) fitted.durationSec = Math.max(fitted.durationSec, round(cue.atSec + (cue.durationSec ?? 0)));
+  return fitted;
+}

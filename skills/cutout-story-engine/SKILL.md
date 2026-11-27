@@ -1,12 +1,12 @@
 ---
 name: cutout-story-engine
-description: Make vertical (9:16) animated story-series episodes as 2D SVG cut-out puppet animation, rendered with Remotion, voiced by ElevenLabs and lip-synced with Rhubarb. Use when someone wants to create, plan, script, render or review an animated short, episode or series for TikTok, Reels or Shorts with recurring characters; to set up the cut-out animation engine in a folder; or when a project contains `.cutout-engine.json`. Four workflows - setup, create, video, review - from premise to finished MP4.
+description: Make vertical (9:16) animated story-series episodes as 2D SVG cut-out puppet animation, rendered with Remotion, voiced by ElevenLabs and lip-synced with Rhubarb. Use when someone wants to create, plan, script, render or review an animated short, episode or series for TikTok, Reels or Shorts with recurring characters, starting from a few sentences, a premise or a novel summary; to set up the cut-out animation engine in a folder; or when a project contains `.cutout-engine.json`. Four workflows - setup, create, video, review - from premise to finished MP4, with hooks, pacing, transitions and sound design built in.
 license: MIT
 ---
 
 # Cutout Story Engine
 
-Turns a premise into finished 1080x1920, 30 FPS episodes: the story and shooting script (`create`), code-drawn React + SVG puppets and sets plus voiced, lip-synced render (`video`), and a QA pass that records continuity (`review`). Everything a series produces stays in the user's project folder; this skill only carries the engine and the rules.
+Turns a premise (a few sentences are enough) into finished 1080x1920, 30 FPS episodes: the series plan and each episode's story and shooting script, with the hook, pacing, transitions and sound decided by a built-in retention playbook (`create`), code-drawn React + SVG puppets and sets plus voiced, lip-synced render (`video`), and a QA pass that records continuity (`review`). Everything a series produces stays in the user's project folder; this skill only carries the engine and the rules.
 
 ## Workflows
 
@@ -19,7 +19,7 @@ Turns a premise into finished 1080x1920, 30 FPS episodes: the story and shooting
 | To build missing characters/sets and render the locked script | `workflows/video.md` |
 | A quality check of the rendered episode | `workflows/review.md` |
 
-Paths starting with `workflows/`, `references/`, `scripts/init.mjs` or `assets/` are inside this skill. Every other path (`src/`, `scripts/session.mjs`, `sessions/`, `story-bible.json`, `out/`) is inside the user's project, and commands run from the project folder.
+Paths starting with `workflows/`, `references/`, `scripts/init.mjs` or `assets/` are inside this skill. Every other path (`src/`, `scripts/session.mjs`, `sessions/`, `series.json`, `story-bible.json`, `out/`) is inside the user's project, and commands run from the project folder.
 
 ## Before any workflow
 
@@ -42,9 +42,9 @@ Canvas: **1080x1920 (9:16), 30 FPS**, 100% React + SVG in Remotion. Outline: `3p
 
 | Workflow | Read |
 | --- | --- |
-| `/create` | `references/sound.md` |
+| `/create` | `references/storytelling.md`, `references/sound.md` |
 | `/video` | `references/characters.md` or `references/environments.md`, only when that kind of asset is missing |
-| `/review` | `references/animation.md` |
+| `/review` | `references/animation.md`, `references/storytelling.md` (section 8) |
 
 ## Token discipline
 

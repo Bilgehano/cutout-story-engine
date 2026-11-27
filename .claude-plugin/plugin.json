@@ -1,6 +1,6 @@
 {
   "name": "cutout-story-engine",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Animated 9:16 story series as 2D SVG cut-out puppets: plan, voice (ElevenLabs), lip-sync (Rhubarb) and render (Remotion) episodes for TikTok, Reels and Shorts.",
   "author": { "name": "Bilgehano" },
   "homepage": "https://github.com/Bilgehano/cutout-story-engine",

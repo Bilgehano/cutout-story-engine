@@ -140,6 +140,43 @@ function inventory(plan, bible, kind) {
   }).map((a) => a.id);
 }
 
+/**
+ * Retention checks learned from finished episodes. They do not block a lock: /create fixes each one
+ * or keeps it on purpose and says why. Times are scene-relative seconds.
+ */
+export function lint(p) {
+  const warnings = [];
+  const warn = (scene, why) => warnings.push(scene ? `${scene.id}: ${why}` : why);
+  const moves = new Set(["camera", "walk", "standUp", "fall", "characterEnter", "jump"]);
+  const [first] = p.scenes;
+  const last = p.scenes.at(-1);
+  if (p.durationSec < 40 || p.durationSec > 75) warn(null, `runtime ${p.durationSec}s; episodes hold best at 45-65s`);
+  if (!first.events.some((e) => e.type === "title" && e.atSec <= 0.5)) warn(first, "no title card in the first 0.5s; the opening must read with the sound off");
+  const firstSound = Math.min(...[...first.lines, ...first.sfx].map((c) => c.atSec), Infinity);
+  if (firstSound > 0.5) warn(first, `first sound at ${firstSound === Infinity ? "never" : `${firstSound}s`}; start on a sound or line within 0.5s`);
+  if (first.durationSec > 4) warn(first, `opening shot runs ${first.durationSec}s; cut or move the camera by 3s`);
+  if (!last.events.some((e) => e.type === "endCard")) warn(last, "no endCard; end on the series call to action");
+  if (p.scenes.filter((s) => s.lines.some((l) => l.lineType === "narration")).length > 2) warn(null, "narration in more than two scenes; show it instead");
+  p.scenes.forEach((s, i) => {
+    const before = p.scenes[i - 1];
+    if (before && before.perspective !== s.perspective && (s.transition ?? "cut") === "cut" && !before.exit) warn(s, "time jump without a transition (flash, blink, eyesClose/eyesOpen)");
+    if (before && before.perspective !== s.perspective && !s.label && s.perspective === "memory") warn(s, "memory without a time label (for example 'Vor 3 Tagen')");
+    if (s.durationSec > 6 && !s.events.some((e) => moves.has(e.type))) warn(s, `${s.durationSec}s without a camera move or blocking change`);
+    const lines = [...s.lines].sort((a, b) => a.atSec - b.atSec);
+    lines.slice(1).forEach((line, k) => {
+      const end = lines[k].atSec + lines[k].durationSec;
+      const filled = [...s.sfx, ...s.events].some((c) => c.atSec >= end - 0.05 && c.atSec < line.atSec);
+      if (line.atSec - end > 1.2 && !filled) warn(s, `${(line.atSec - end).toFixed(1)}s of dead air before "${line.text.slice(0, 30)}"`);
+    });
+    for (const e of s.events.filter((x) => x.type === "camera")) {
+      const { x, y, zoom } = e.value;
+      const over = Math.max(540 / zoom - x, x - (1080 - 540 / zoom), 960 / zoom - y, y - (1920 - 960 / zoom)) * zoom;
+      if (over > 40) warn(s, `camera at ${e.atSec}s shows ${Math.round(over)}px past the edge of the set`);
+    }
+  });
+  return warnings;
+}
+
 /** Registers finished assets in the story bible and fingerprints their artwork. */
 function approve(plan, bible, kind) {
   const [collection, folder] = kinds[kind];
@@ -177,6 +214,7 @@ function summary(bible, numbers) {
     return [{ episodeNumber: n, approved, title, summary: story, ending }];
   });
   return {
+    series: fs.existsSync("series.json") ? json("series.json") : null,
     narratorVoiceId: bible.narratorVoiceId,
     characters: bible.characters.map((c) => pick(c, ["id","name","role","poses","outfits","conditions"])),
     environments: bible.environments.map((e) => pick(e, ["id","name","timeOfDayVariants","props"])),
@@ -229,7 +267,7 @@ export function session(command, arg) {
       check(marked(kind), `Resume /video: ${kind} QA is incomplete for this plan.`);
     }
   } else check(command === "status", `Unknown session command: ${command}`);
-  return { dir, plan, bible, missing };
+  return { dir, plan, bible, missing, ...(["lock", "status"].includes(command) ? { warnings: lint(plan) } : {}) };
 }
 
 if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {

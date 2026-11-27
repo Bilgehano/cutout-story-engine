@@ -349,7 +349,7 @@ const SceneView: React.FC<{ scene: EpisodeScene; languageCode?: string }> = ({ s
         />
       ) : null}
 
-      <Subtitle text={caption?.text} />
+      <Subtitle text={caption?.text} emphasis={activeSegment?.highlight} />
     </AbsoluteFill>
   );
 };

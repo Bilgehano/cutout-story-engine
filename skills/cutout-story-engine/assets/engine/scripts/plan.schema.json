@@ -68,7 +68,7 @@
         "lines":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["lineType","speakerId","text","atSec","durationSec","intent","tags"],
           "properties":{"lineType":{"enum":["dialogue","thought","narration"]},"speakerId":{"$ref":"#/definitions/id"},"text":{"$ref":"#/definitions/text"},
             "intent":{"$ref":"#/definitions/text"},"tags":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"string","pattern":"^[a-zA-Z]+(?:[ -][a-zA-Z]+)*$"}},
-            "highlight":{"type":"boolean"},
+            "highlight":{"type":"boolean"},"caption":{"type":"boolean"},
             "atSec":{"$ref":"#/definitions/at"},"durationSec":{"$ref":"#/definitions/positive"},
             "voiceSettings":{"$ref":"#/definitions/voiceSettings"}}}},
         "sfx":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["prompt","atSec","durationSec"],

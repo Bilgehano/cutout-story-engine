@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "produce": "node scripts/produce.mjs",
     "session": "node scripts/session.mjs",
+    "sheet": "node scripts/sheet.mjs",
     "test": "node --test"
   },
   "dependencies": {

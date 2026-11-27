@@ -98,6 +98,7 @@ export type EpisodeEvent = {
 
 export type EpisodeSegment = {
   captions?: {text: string; start: number; end: number}[];
+  highlight?: boolean;
   index: number;
   lineType: LineType;
   speakerId: string;

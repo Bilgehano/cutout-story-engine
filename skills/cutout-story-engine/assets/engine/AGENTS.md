@@ -31,7 +31,7 @@ Characters and the storyteller MUST NEVER verbally describe physical actions, de
 
 Every script segment is exactly one of:
 
-- `"dialogue"`: spoken aloud by a character (`character.voiceId`). Rhubarb lip-sync runs; that character's mouth and arms move.
+- `"dialogue"`: spoken aloud by a character (`character.voiceId`). Rhubarb lip-sync runs; only that character's mouth moves (no speech gestures).
 - `"thought"`: a character's inner monologue (`character.voiceId`). The character's mouth MUST stay closed (`mouthShape="X"`, `isTalking=false`); the character reacts only via `eyeLook` and `mood` eyebrows.
 - `"narration"`: spoken by the Storyteller (`narratorVoiceId`, speaker `"narrator"`). ALL character mouths MUST stay closed (`mouthShape="X"`, `isTalking=false`).
 

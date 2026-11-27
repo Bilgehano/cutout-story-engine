@@ -188,3 +188,44 @@ test("approved artwork is locked, states are checked and reuse plans stay short"
   assert.deepEqual(session("status").plan.scenes[0].lines[0].voiceSettings, {stability:0.5, similarity_boost:0.8});
   assert.equal(session("summary").characters[0].id, "Mara");
 });
+
+test("speech slots follow the recorded takes and later cues keep their spacing", async () => {
+  const { fitScene } = await import("../scripts/performance.mjs");
+  const scene = {
+    id: "s", durationSec: 6,
+    lines: [
+      { text: "long", atSec: 0, durationSec: 1 },
+      { text: "short", atSec: 2, durationSec: 2 },
+    ],
+    sfx: [{ atSec: 1.5, durationSec: 0.5 }],
+    events: [{ type: "camera", atSec: 4.5, durationSec: 1 }],
+  };
+  const changes = [];
+  const fitted = fitScene(scene, [1.5, 0.5], changes);
+  const f = (seconds) => Math.round(seconds * 30);
+  // The first take overflows by 15 frames (+ a breath), pushing the sfx and the second line back 19 frames.
+  assert.equal(f(fitted.lines[0].durationSec), 49);
+  assert.equal(f(fitted.sfx[0].atSec), 64);
+  assert.equal(f(fitted.lines[1].atSec), 79);
+  // The second slot had 45 frames of silence; it keeps only the breath, and the camera follows.
+  assert.equal(f(fitted.lines[1].durationSec), 19);
+  assert.equal(f(fitted.events[0].atSec), 113);
+  assert.equal(f(fitted.durationSec), 158);
+  assert.equal(changes.length, 2);
+  assert.equal(scene.lines[0].durationSec, 1, "the plan itself is not changed");
+  const exact = fitScene(scene, [0.95, 1.8]);
+  assert.deepEqual(exact, scene, "takes that fit their slots leave the timing alone");
+});
+
+test("the retention lint flags a slow, unlabelled opening", async () => {
+  const { lint } = await import("../scripts/session.mjs");
+  const quiet = { atSec: 0, durationSec: 1 };
+  const scene = (id, extra) => ({ id, durationSec: 10, perspective: "present", lines: [], sfx: [], events: [], ...extra });
+  const warnings = lint({ durationSec: 20, scenes: [
+    scene("open", { lines: [{ ...quiet, atSec: 2, text: "Hallo" }] }),
+    scene("memory", { perspective: "memory" }),
+  ] });
+  for (const expected of ["runtime 20s", "no title card", "first sound at 2s", "opening shot runs 10s", "no endCard", "time jump without a transition", "memory without a time label", "10s without a camera move"]) {
+    assert.ok(warnings.some((w) => w.includes(expected)), `missing warning: ${expected}`);
+  }
+});

@@ -7,7 +7,12 @@
  *                     -> ffprobe durations -> src/data/episode.json
  *                     -> npx remotion render Episode out/episode_<n>.mp4
  *
- * Usage: node scripts/produce.mjs [--no-render]
+ * Usage: node scripts/produce.mjs [--no-render] [--keep-timing]
+ *
+ * Timing is fitted to the recorded speech: a line longer than its slot pushes everything after it
+ * (and the scene end) later, and a slot with more than FIT_SLACK seconds of trailing silence is
+ * tightened, pulling later cues earlier. The plan stays as written; sessions/episode-N/timing.json
+ * lists every change. --keep-timing renders the planned timing as is and fails on an overflow.
  */
 import crypto from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -16,7 +21,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import { session } from "./session.mjs";
-import { speechRequest, captionCues } from "./performance.mjs";
+import { speechRequest, captionCues, fitScene } from "./performance.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 process.chdir(ROOT);
@@ -191,16 +196,21 @@ function resolveVoice(speakerId, plan, bible) {
   return { voiceId: character.voiceId };
 }
 
-async function produceScene(scene, sceneIndex, draft, ctx) {
+async function produceScene(planned, sceneIndex, draft, ctx) {
   const segments = [];
+  const takes = [];
+  for (const [index, line] of (planned.lines ?? []).entries()) {
+    const { voiceId } = resolveVoice(line.speakerId, draft, ctx.bible);
+    const tts = await synthesizeSpeech(planned.lines, index, voiceId, ctx.modelId, draft.languageCode);
+    takes.push({ tts, audioDurationSec: probeDuration(tts.file) });
+  }
+  const scene = ctx.keepTiming ? planned : fitScene(planned, takes.map((t) => t.audioDurationSec), ctx.changes);
 
   for (const [index, line] of (scene.lines ?? []).entries()) {
-    const { voiceId } = resolveVoice(line.speakerId, draft, ctx.bible);
-    const tts = await synthesizeSpeech(scene.lines, index, voiceId, ctx.modelId, draft.languageCode);
-    const audioDurationSec = probeDuration(tts.file);
+    const { tts, audioDurationSec } = takes[index];
     const durationInFrames = Math.ceil(audioDurationSec * FPS);
     if (durationInFrames > Math.round(line.durationSec * FPS)) {
-      fail(`${scene.id} line ${index + 1} needs ${durationInFrames} frames, exceeding its planned slot. Revise the timing or text in /create first.`);
+      fail(`${scene.id} line ${index + 1} needs ${durationInFrames} frames, exceeding its planned slot. Run without --keep-timing, or revise the timing in /create.`);
     }
     // Rhubarb runs ONLY for dialogue; thought and narration keep every mouth closed.
     const mouthCues =
@@ -212,7 +222,9 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
       lineType: line.lineType,
       speakerId: line.speakerId,
       text: line.text,
-      captions: line.lineType === "narration" || line.highlight ? tts.captions : [],
+      // Most viewers watch muted, so every spoken line is captioned unless the plan opts out.
+      captions: line.caption === false ? [] : tts.captions,
+      ...(line.highlight ? { highlight: true } : {}),
       audioFile: tts.publicPath,
       startFrame: Math.round(line.atSec * FPS),
       durationInFrames,
@@ -291,6 +303,8 @@ async function main() {
   const ctx = {
     modelId,
     bible,
+    keepTiming: process.argv.includes("--keep-timing"),
+    changes: [],
     rhubarb: () => (rhubarbPath ??= resolveRhubarb()),
   };
 
@@ -313,6 +327,13 @@ async function main() {
     scenes,
   };
   fs.writeFileSync("src/data/episode.json", `${JSON.stringify(episode, null, 2)}\n`);
+  const planned = draft.scenes.reduce((n, s) => n + Math.round(s.durationSec * FPS), 0);
+  fs.writeFileSync(`${dir}/timing.json`, `${JSON.stringify({ plannedSec: planned / FPS, fittedSec: startFrame / FPS, changes: ctx.changes }, null, 2)}\n`);
+  if (ctx.changes.length) {
+    const longer = ctx.changes.filter((c) => c.seconds > 0).length;
+    log(`Timing fitted to the recorded speech: ${longer} slot(s) lengthened, ${ctx.changes.length - longer} tightened, ` +
+      `${(planned / FPS).toFixed(1)}s -> ${(startFrame / FPS).toFixed(1)}s (details in ${dir}/timing.json).`);
+  }
   const props = `${dir}/episode.json`;
   fs.copyFileSync("src/data/episode.json", props);
   log(
@@ -326,15 +347,20 @@ async function main() {
     return;
   }
   const output = `out/episode_${draft.episodeNumber}.mp4`;
+  const raw = `out/episode_${draft.episodeNumber}.raw.mp4`;
   log(`Rendering ${output} ...`);
   const render = spawnSync(
     "npx",
-    ["remotion", "render", "src/index.ts", "Episode", output, `--props=${props}`, "--log=error"],
+    ["remotion", "render", "src/index.ts", "Episode", raw, `--props=${props}`, "--log=error"],
     { stdio: "inherit", shell: true },
   );
   if (render.status !== 0) {
     fail(`Remotion render failed with exit code ${render.status}.`);
   }
+  // Stacked speech, heartbeats and effects can clip; a limiter keeps peaks under -1.5 dBFS for the platforms.
+  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", raw, "-c:v", "copy",
+    "-af", "volume=-1.5dB,alimiter=limit=0.84:level=false", "-c:a", "aac", "-b:a", "256k", "-ar", "48000", output]);
+  fs.rmSync(raw);
   log(`Done: ${output}${warnings.length ? ` (${warnings.length} warning(s) above)` : ""}. Run /review next.`);
 }
 

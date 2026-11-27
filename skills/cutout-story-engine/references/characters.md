@@ -28,7 +28,8 @@ Mandatory behaviours:
 - **Auto-blink:** a blink every ~105 frames: `const phase = frame % 105; const blink = interpolate(phase, [0, 3, 6], [1, 0.05, 1], { extrapolateRight: "clamp" })`. Offset the phase per character so two characters never blink together. Scale the eyelid/eye `scaleY` by `blink`.
 - **eyeLook:** pupils translate by `eyeLook.x * 7` and `eyeLook.y * 5` units (clamped inside the eye white).
 - **Mood eyebrows:** define a target `{ lift, tilt, curve }` per mood; blend `prev -> current` using `moodBlend` (already a Remotion `spring` computed by the composition). Mouth corners may follow the mood only while the mouth is `X`.
-- **Gestures:** only when `isTalking === true`. Forearms rotate around the elbow pivot with `Math.sin` at different phases/frequencies per arm. Amplitude by `gestureIntensity`: `calm 6deg`, `moderate 14deg`, `expressive 26deg`. When `isTalking` is false the arms ease back to a rest angle with `spring`.
+- **Arms:** the engine renders every character `still` (no speech gestures: waving hands while talking looked random). Arms keep a rest pose that suits the character (hands in pockets, arms crossed, clutching a strap) and change only for planned actions such as clutching the chest or covering the face.
+- **Readable at a glance:** exaggerate the archetype in the look so one frame tells who is who (taped glasses, acne and greasy hair for the outsider; a smug grin and expensive clothes for the bully). Faces carry the acting, so eyes, brows and the mouth corners must read at 30% size.
 - **Poses:** `standing` draws the full body; `sitting_desk` draws torso up, hands resting/gesturing above the desk line (the desk is a foreground layer of the environment); `lying_floor` draws the full body collapsed horizontally, inside the 600-unit box width, resting on its bottom edge (the floor line), with no standing shadow. The environment must keep that floor area unobstructed.
 
 ## 3. Rhubarb viseme switch-case

@@ -6,6 +6,7 @@ node_modules/
 .env
 .setup-complete
 story-bible.json
+series.json
 sessions/
 
 # Render output and QA stills
