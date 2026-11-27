@@ -1,0 +1,45 @@
+{
+  "episodeNumber": 1,
+  "title": "The spare key",
+  "brief": "A quiet mystery. Let the sound at the door interrupt a private thought.",
+  "summary": "Mara waits in the hall with a key nobody was supposed to have.",
+  "ending": "The locked door opens from the other side. The visitor is not yet visible.",
+  "openingHook": "Two steps stop outside a locked door. Mara has the only key.",
+  "closingHook": "The door opens anyway. Whoever is behind it knows the lock.",
+  "modelId": "eleven_v4",
+  "durationSec": 5,
+  "languageCode": "en",
+  "narratorVoiceId": "EXAMPLE_STORYTELLER",
+  "characters": [{
+    "id": "Mara", "component": "Mara", "source": "build", "name": "Mara", "role": "caretaker",
+    "design": "Tall, angular silhouette; warm brown skin, square glasses, short charcoal curls. Boxy rust jacket over cream overalls; brass key pinned to the left lapel. Restrained hand movements.",
+    "voiceId": "EXAMPLE_MARA", "voiceSettings": {"stability":0.5,"similarity_boost":0.8}, "outfits": ["work","evening"], "conditions": ["tired"], "poses": ["standing"], "gestureIntensity": "calm"
+  }],
+  "environments": [{
+    "id": "Hall", "component": "Hall", "source": "build", "name": "Service hallway",
+    "design": "Locked-off front view. Blue plaster back wall; green service door on the right, pivot on its right jamb. Warm lamp lights the left third. Floor line y=1500; thin foreground sill leaves Mara unobstructed.",
+    "timeOfDayVariants": ["night"], "props": ["hinged service door"]
+  }],
+  "scenes": [{
+    "id": "wait", "environmentId": "Hall", "timeOfDay": "night", "durationSec": 5,
+    "perspective":"present","transition":"cut","turn":"Mara trusts the key until the sound on the other side makes her doubt who gave it to her.",
+    "beats": [
+      "Mara waits left of the shut door, key in the lamplight; heels approach outside and stop.",
+      "On the missing third step she looks at the handle, brows drawn, thinking with closed lips.",
+      "The door eases ajar; hold on the black gap and cut before a face appears."
+    ],
+    "characters": [{"characterId":"Mara","pose":"standing","x":0.3,"flip":false}],
+    "ambience": "Night interior, distant ventilation fan through a ceiling grille, soft steady motor hum with a faint hollow tile reflection; no footsteps, speech or door sounds",
+    "lines": [{"lineType":"thought","speakerId":"Mara","text":"Who else knows?","intent":"She can barely form the question; keep the last word small.","tags":["whispering"],"atSec":1,"durationSec":2}],
+    "sfx": [
+      {"prompt":"Two leather heel taps on tile beyond a closed door, half a beat apart; first muffled, second slightly nearer, short hollow reflection, then an abrupt stop","atSec":0.1,"durationSec":0.85},
+      {"prompt":"One dry metal hinge taking weight slowly, quiet onset rising to a thin squeal, catching short as the door stops; close, with a small tiled-room echo","atSec":3,"durationSec":0.85},
+      {"prompt":"Single distant low human vowel, breathy and wordless, swelling softly out of room tone then fading to air; an uneasy accent, no lyrics or instruments","atSec":4,"durationSec":1,"volume":0.35}
+    ],
+    "events": [
+      {"type":"eyeLook","characterId":"Mara","value":"right","atSec":1,"durationSec":0.4},
+      {"type":"mood","characterId":"Mara","value":"worried","atSec":1,"durationSec":0.4},
+      {"type":"doorState","value":"ajar","atSec":3,"durationSec":0.4}
+    ]
+  }]
+}

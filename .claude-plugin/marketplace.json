@@ -1,0 +1,13 @@
+{
+  "name": "cutout-story-engine",
+  "owner": { "name": "Bilgehano" },
+  "metadata": { "description": "Cut-out puppet animation for vertical story series." },
+  "plugins": [
+    {
+      "name": "cutout-story-engine",
+      "source": "./",
+      "description": "Plan, voice, lip-sync and render 9:16 animated story episodes with code-drawn SVG puppets.",
+      "version": "1.0.0"
+    }
+  ]
+}

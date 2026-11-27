@@ -1,42 +1,4 @@
-# Dependencies
 node_modules/
-
-# Secrets and local state
-.env
-.setup-complete
-story-bible.json
-sessions/
-
-# Render output and QA stills
-out/
-
-# Style references (never committed)
-refs/*
-!refs/.gitkeep
-
-# Binaries (Rhubarb Lip Sync is downloaded locally)
-bin/*
-!bin/.gitkeep
-
-# Generated audio caches
-public/audio/*
-!public/audio/.gitkeep
-public/sfx/*
-!public/sfx/.gitkeep
-public/ambience/*
-!public/ambience/.gitkeep
-public/lipsync/*
-!public/lipsync/.gitkeep
-
-# Generated episode data
-src/data/*
-!src/data/.gitkeep
-
-# Generated characters and environments (registries stay tracked)
-src/components/characters/*.tsx
-src/components/backgrounds/*.tsx
-
-# OS / editor noise
 .DS_Store
 Thumbs.db
 *.log

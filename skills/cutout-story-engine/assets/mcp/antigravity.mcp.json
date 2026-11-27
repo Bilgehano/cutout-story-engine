@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "elevenlabs": {
+      "serverUrl": "https://api.elevenlabs.io/v1/mcp"
+    }
+  }
+}

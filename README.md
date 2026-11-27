@@ -1,41 +1,77 @@
 # Cutout Story Engine
 
-A GitHub template for a modular **2D SVG cut-out puppet animation studio**: layered React + SVG characters and environments rendered by [Remotion](https://www.remotion.dev) at 1080x1920 / 30 FPS, voiced by [ElevenLabs](https://elevenlabs.io) and lip-synced with [Rhubarb Lip Sync](https://github.com/DanielSWolf/rhubarb-lip-sync). Everything is driven by Copilot slash commands.
+An **agent skill** that makes vertical (9:16) animated story series: code-drawn 2D SVG cut-out puppets and sets, rendered with [Remotion](https://www.remotion.dev), voiced with [ElevenLabs](https://elevenlabs.io) and lip-synced with [Rhubarb Lip Sync](https://github.com/DanielSWolf/rhubarb-lip-sync). You give it a premise; it plans the episode second by second, builds the characters, records the voices and renders a 1080x1920 MP4 ready for TikTok, Reels and Shorts.
 
-## Prerequisites
+It is installed into your AI agent, not cloned as a project. Your series (characters, sets, scripts, audio, videos) lives in your own folder and never touches this repository.
 
-- Node.js 18+, `ffmpeg` and `ffprobe` on your `PATH`
-- An ElevenLabs API key (the free tier works)
-- Rhubarb Lip Sync in `bin/` (the `/setup` command walks you through it)
+## Install
 
-## Workflow
+### Claude Code (plugin)
 
-1. `/setup`: audits tools, stores your `ELEVENLABS_API_KEY`, configures the ElevenLabs MCP server, detects your plan, picks the storyteller voice, scaffolds Remotion and creates `story-bible.json`.
-2. `/create`: give it a premise or say "continue after episode 1". The AI checks earlier episodes, asks about preferences you want to set, and fills in the rest. It chooses the runtime, designs the cast and sets, assigns voices and writes a second-by-second plan. No media is generated.
-3. `/character`: builds and visually checks only the missing puppets specified in that plan. If the entire cast is already built, it records the stage as complete without redrawing anything.
-4. `/environment`: does the same for sets. An episode can reuse the hall from episode 1 and build just one new location.
-5. `/video`: renders the locked plan after both asset stages finish. Dialogue, thoughts, narration, SFX and visual cues use planned scene-relative times. If speech won't fit, it reports the line to revise in `/create` rather than changing the duration.
-6. `/review`: audits the rendered episode and records approved continuity in the story bible.
+```
+/plugin marketplace add Bilgehano/cutout-story-engine
+/plugin install cutout-story-engine@cutout-story-engine
+```
 
-Each new episode has its own local `sessions/episode-N/brief.md` and `plan.json`. The newest numbered folder stays active across chats; an unfinished episode blocks production instead of falling back to an older plan. Ask `/create` to **revise the active episode** to edit it in place. After a revision, run both asset commands again. Shared artwork and audio caches remain in their normal locations. Back up `sessions/` along with your story bible and generated assets; they are not committed.
+This adds the skill and four commands: `/cutout-story-engine:setup`, `:create`, `:video`, `:review`.
 
-See the [example shooting script](examples/episode-plan.json) for the actual plan format. Existing projects keep their setup and assets; use `/create` before the next render. The old `src/data/draft_script.json` is not production input.
+### Any agent that supports Agent Skills
+
+The skill is the folder [`skills/cutout-story-engine`](skills/cutout-story-engine), a standard `SKILL.md` skill with its scripts and engine files inside. Copy it into your agent's skills folder:
+
+```
+git clone --depth 1 https://github.com/Bilgehano/cutout-story-engine.git
+cp -r cutout-story-engine/skills/cutout-story-engine <skills folder>/
+```
+
+For example `~/.claude/skills/` (Claude Code without the plugin), or `.github/skills/` inside a project for GitHub Copilot. Other agents (OpenAI Codex, Gemini CLI, Google Antigravity, Cursor and others) each document their own skills folder. Then ask the agent to "run the cutout-story-engine setup".
+
+## Requirements
+
+- Node.js 18+, plus `ffmpeg` and `ffprobe` on your `PATH`
+- An ElevenLabs account and API key with a tag-capable speech model (Eleven v4 or v3), and the [ElevenLabs MCP server](https://elevenlabs.io/docs/eleven-api/resources/mcp-server) connected in your agent (setup walks you through it)
+- Rhubarb Lip Sync is downloaded automatically during setup
+
+## Use
+
+Open your agent in an **empty folder** for your series, then:
+
+1. **setup**: installs the engine into the folder, downloads Rhubarb, checks your ElevenLabs key and MCP connection, detects your plan, picks a storyteller voice and creates `story-bible.json`. Run it again any time to upgrade the engine.
+2. **create**: give it a premise ("a bullied student wakes up one year in the past") or say "continue after episode 1". It writes one scene-by-scene proposal with hooks, cast, dialogue, voice direction and effects. Accept it or ask for changes. No media is generated yet.
+3. **video**: draws and visually checks any new puppets and sets, records the voices and renders the locked script to `out/episode_<n>.mp4`.
+4. **review**: audits the render (format, lip sync, captions, safe zones) and records the episode in the story bible so the next one keeps continuity.
+
+Episodes can be in any language; spoken lines follow the episode language, and non-English episodes use Rhubarb's phonetic recognizer.
+
+## Updating
+
+Update the skill the way you installed it (for the plugin: `/plugin marketplace update cutout-story-engine`), then run **setup** in your series folder. The installer only refreshes engine files and backs up anything it replaces to `.engine-backup/`. It never touches `story-bible.json`, `sessions/`, `.env`, your characters and sets, audio caches or renders.
+
+Coming from the old template repository (pipeline under `.github/skills/cutout-animator/`)? Install the skill and run setup in that folder; it upgrades in place.
+
+## What lives where
+
+| In this repository (the skill) | In your series folder |
+| --- | --- |
+| `SKILL.md`, the four workflows, art/sound/animation references | `story-bible.json`, `sessions/episode-N/` (briefs, scripts) |
+| The installer and the Remotion engine (`assets/engine/`) | Your characters and sets (`src/components/...`) |
+| | Audio caches, `out/` renders, `.env`, `bin/rhubarb` |
+
+Back up your series folder yourself (or put it in your own private Git repository; its `.gitignore` already keeps secrets and caches out).
 
 ## Rules at a glance
 
-See [`AGENTS.md`](AGENTS.md) and [`.github/skills/cutout-animator/SKILL.md`](.github/skills/cutout-animator/SKILL.md). In short: no external image/video generators, `refs/` are style-only, never narrate physical actions (use SFX + ambience + animation), only `dialogue` moves mouths.
+No external image or video generators: every character and set is React + SVG. `refs/` images are style references only. Nobody narrates physical actions; sound effects, ambience and animation show them. Only `dialogue` moves mouths; thoughts and narration keep them closed. The full rules are in the engine's `AGENTS.md` and the skill's [`SKILL.md`](skills/cutout-story-engine/SKILL.md).
 
-## Git hygiene
-
-Only the template is tracked. Secrets, `refs/`, `bin/`, generated characters/environments, audio caches, `src/data/` and `out/` are git-ignored.
-
-## Useful commands
+## Development
 
 ```
-npm install          # install dependencies
-npm run studio       # open Remotion Studio
-npm run typecheck    # TypeScript check
-npm run produce      # run the episode pipeline (same as /video step 3)
+node skills/cutout-story-engine/scripts/init.mjs --target /tmp/project
+cd /tmp/project && npm install && npm run typecheck && npm test
 ```
 
-Audio is cached by SHA-256 in `public/audio`, `public/sfx` and `public/ambience`, so animation tweaks and re-renders cost 0 ElevenLabs credits.
+The same check runs on every push for Linux, Windows and macOS.
+
+## License
+
+[MIT](LICENSE)

@@ -1,0 +1,31 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  engine:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the engine into a fresh project
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/project"
+          cd "$RUNNER_TEMP/project"
+          node "$GITHUB_WORKSPACE/skills/cutout-story-engine/scripts/init.mjs"
+          npm ci
+      - name: Typecheck and test
+        shell: bash
+        working-directory: ${{ runner.temp }}/project
+        run: |
+          npm run typecheck
+          npm test
+          npx remotion compositions src/index.ts

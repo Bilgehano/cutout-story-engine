@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Locked episode production plan",
+  "type": "object", "additionalProperties": false,
+  "required": ["episodeNumber","title","brief","summary","ending","openingHook","closingHook","modelId","durationSec","languageCode","narratorVoiceId","characters","environments","scenes"],
+  "properties": {
+    "openingHook":{"$ref":"#/definitions/text"}, "closingHook":{"$ref":"#/definitions/text"},
+    "modelId":{"enum":["eleven_v3","eleven_v4"]},
+    "episodeNumber": {"type":"integer","minimum":1},
+    "title": {"$ref":"#/definitions/text"}, "brief": {"$ref":"#/definitions/text"},
+    "summary": {"$ref":"#/definitions/text"}, "ending": {"$ref":"#/definitions/text"},
+    "languageCode": {"$ref":"#/definitions/text"}, "narratorVoiceId": {"$ref":"#/definitions/text"},
+    "durationSec": {"type":"number","minimum":1},
+    "characters": {"type":"array","items":{"$ref":"#/definitions/character"}},
+    "environments": {"type":"array","items":{"$ref":"#/definitions/environment"}},
+    "scenes": {"type":"array","minItems":1,"items":{"$ref":"#/definitions/scene"}}
+  },
+  "definitions": {
+    "text": {"type":"string","pattern":"\\S"},
+    "id": {"type":"string","pattern":"^[A-Za-z][A-Za-z0-9_-]*$"},
+    "component": {"type":"string","pattern":"^[A-Z][A-Za-z0-9]*$"},
+    "source": {"enum":["reuse","build"]},
+    "pose": {"enum":["standing","sitting_desk","lying_floor"]},
+    "gesture": {"enum":["calm","moderate","expressive"]},
+    "timeOfDay": {"enum":["day","sunset","night"]},
+    "unit": {"type":"number","minimum":0,"maximum":1},
+    "at": {"type":"number","minimum":0},
+    "positive": {"type":"number","exclusiveMinimum":0},
+    "names": {"type":"array","items":{"$ref":"#/definitions/id"}},
+    "voiceSettings": {"type":"object","additionalProperties":false,"required":["stability","similarity_boost"],
+      "properties":{"stability":{"$ref":"#/definitions/unit"},"similarity_boost":{"$ref":"#/definitions/unit"}}},
+    "character": {
+      "type":"object","additionalProperties":false,
+      "required":["id","component","source","name","role","design","voiceId","poses","gestureIntensity"],
+      "properties":{
+        "id":{"$ref":"#/definitions/id"},"component":{"$ref":"#/definitions/component"},"source":{"$ref":"#/definitions/source"},
+        "name":{"$ref":"#/definitions/text"},"role":{"$ref":"#/definitions/text"},"design":{"$ref":"#/definitions/text"},
+        "voiceId":{"$ref":"#/definitions/text"},"voiceSettings":{"$ref":"#/definitions/voiceSettings"},
+        "outfits":{"$ref":"#/definitions/names"},"conditions":{"$ref":"#/definitions/names"},"poses":{"type":"array","minItems":1,"items":{"$ref":"#/definitions/pose"}},
+        "gestureIntensity":{"$ref":"#/definitions/gesture"}
+      }
+    },
+    "environment": {
+      "type":"object","additionalProperties":false,"required":["id","component","source","name","design","timeOfDayVariants","props"],
+      "properties":{
+        "id":{"$ref":"#/definitions/id"},"component":{"$ref":"#/definitions/component"},"source":{"$ref":"#/definitions/source"},
+        "name":{"$ref":"#/definitions/text"},"design":{"$ref":"#/definitions/text"},
+        "timeOfDayVariants":{"type":"array","minItems":1,"items":{"$ref":"#/definitions/timeOfDay"}},
+        "props":{"type":"array","items":{"$ref":"#/definitions/text"}}
+      }
+    },
+    "scene": {
+      "type":"object","additionalProperties":false,
+      "required":["id","durationSec","beats","environmentId","timeOfDay","ambience","characters","lines","sfx","events","perspective","transition","turn"],
+      "properties":{
+        "turn":{"$ref":"#/definitions/text"},
+        "perspective":{"enum":["present","memory"]},
+        "transition":{"enum":["cut","blink","flash","fadeFromBlack","eyesOpen"]},
+        "exit":{"enum":["flash","eyesClose"]},
+        "effect":{"enum":["heartAttack","dying"]},
+        "label":{"$ref":"#/definitions/text"},
+        "id":{"$ref":"#/definitions/id"},"durationSec":{"type":"number","minimum":1},
+        "beats":{"type":"array","minItems":1,"description":"One short sentence per visible or audible change.","items":{"$ref":"#/definitions/text"}},
+        "environmentId":{"$ref":"#/definitions/id"},"timeOfDay":{"$ref":"#/definitions/timeOfDay"},
+        "ambience":{"oneOf":[{"$ref":"#/definitions/text"},{"type":"null"}]},
+        "characters":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["characterId","pose","x","flip"],
+          "properties":{"characterId":{"$ref":"#/definitions/id"},"pose":{"$ref":"#/definitions/pose"},"x":{"$ref":"#/definitions/unit"},"flip":{"type":"boolean"},"outfit":{"$ref":"#/definitions/id"},"conditions":{"$ref":"#/definitions/names"}}}},
+        "lines":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["lineType","speakerId","text","atSec","durationSec","intent","tags"],
+          "properties":{"lineType":{"enum":["dialogue","thought","narration"]},"speakerId":{"$ref":"#/definitions/id"},"text":{"$ref":"#/definitions/text"},
+            "intent":{"$ref":"#/definitions/text"},"tags":{"type":"array","minItems":1,"maxItems":3,"items":{"type":"string","pattern":"^[a-zA-Z]+(?:[ -][a-zA-Z]+)*$"}},
+            "highlight":{"type":"boolean"},
+            "atSec":{"$ref":"#/definitions/at"},"durationSec":{"$ref":"#/definitions/positive"},
+            "voiceSettings":{"$ref":"#/definitions/voiceSettings"}}}},
+        "sfx":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["prompt","atSec","durationSec"],
+          "properties":{"volume":{"$ref":"#/definitions/unit"},"prompt":{"$ref":"#/definitions/text"},"atSec":{"$ref":"#/definitions/at"},"durationSec":{"type":"number","minimum":0.5,"maximum":30}}}},
+        "events":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["type","atSec","durationSec"],
+          "properties":{"type":{"enum":["phoneVibrate","doorState","lightFlicker","characterEnter","eyeLook","mood","jump","eyes","standUp","fall","walk","camera","knock","notify","endCard","title"]},
+            "atSec":{"$ref":"#/definitions/at"},"durationSec":{"$ref":"#/definitions/positive"},"characterId":{"$ref":"#/definitions/id"},"value":{}}}}
+      }
+    }
+  }
+}

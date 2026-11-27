@@ -1,0 +1,15 @@
+{
+  "planTier": "free",
+  "defaultLanguage": "en",
+  "narratorVoiceId": "",
+  "voiceModel": null,
+  "narratorVoiceSettings": { "stability": 0.5, "similarity_boost": 0.8 },
+  "style": {
+    "canvas": { "width": 1080, "height": 1920, "fps": 30 },
+    "outlineColor": "#1E1B18",
+    "outlineWidth": 3
+  },
+  "characters": [],
+  "environments": [],
+  "episodes": []
+}
