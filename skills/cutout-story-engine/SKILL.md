@@ -24,7 +24,7 @@ Paths starting with `workflows/`, `references/`, `scripts/init.mjs` or `assets/`
 ## Before any workflow
 
 1. **Find the project.** The project is the folder the user is working in. If it has no `.cutout-engine.json`, the only valid workflow is `/setup`, which installs the engine there with `node <skill>/scripts/init.mjs`.
-2. **Version check.** If `.cutout-engine.json` names an older version than this skill's `VERSION`, tell the user and offer `/setup` to upgrade (engine files only; series data is never touched).
+2. **Keep the engine current.** Run `node <skill>/scripts/init.mjs --sync` from the project folder. It prints "up to date" and does nothing when the project already has this skill's engine; otherwise it replaces the changed engine files (old copies go to `.engine-backup/`, series data is never touched). If it says files were replaced, tell the user in one line; if it says dependencies changed, run `npm install`. Engine fixes belong in the skill, not in one project, because the next sync replaces them.
 3. **Read the project's `AGENTS.md` once.** It is the non-negotiable constitution: setup gatekeeper, SVG-only art, show-don't-tell, the three speech modes and mandatory visual QA.
 
 ## Shared contracts (`src/types.ts`)
@@ -35,7 +35,7 @@ Canvas: **1080x1920 (9:16), 30 FPS**, 100% React + SVG in Remotion. Outline: `3p
 - `BackgroundProps`: `timeOfDay`, `doorState` (0..1), `phoneVibrate`, `lightFlicker` (0..1), `children` (the character slot).
 - Characters live in a `CHARACTER_BOX` of 600x1200 SVG units; the bottom-center of the box is the foot anchor placed on `CHARACTER_FLOOR_Y` (1500px). Draw with `viewBox="0 0 600 1200"`, `width="100%"`, `height="100%"`.
 - Moods: `neutral | happy | sad | angry | surprised | worried`. Poses: `standing | sitting_desk | lying_floor`.
-- Registries (`src/components/characters/index.ts`, `src/components/backgrounds/index.ts`) are automatic: every `<Component>.tsx` exporting `export const <Component>` is registered under that name, and `component` must equal `id`. Never edit the registries. Generated characters and environments belong to the series and stay out of version control; the shared helpers `rig.tsx` and `layer.tsx` are engine files.
+- Registries (`src/components/characters/index.ts`, `src/components/backgrounds/index.ts`) are automatic: every `<Component>.tsx` exporting `export const <Component>` is registered under that name, and `component` must equal `id`. Never edit the registries. Generated characters and environments belong to the series; the shared helpers `rig.tsx` and `layer.tsx` are engine files.
 - On-screen words the engine draws itself (knock lettering, chat reactions) follow the episode `languageCode` via `src/components/locale.ts`; spoken lines are always written in the episode language.
 
 ## References (load on demand)

@@ -26,6 +26,19 @@ cp -r cutout-story-engine/skills/cutout-story-engine <skills folder>/
 
 For example `~/.claude/skills/` (Claude Code without the plugin), or `.github/skills/` inside a project for GitHub Copilot. Other agents (OpenAI Codex, Gemini CLI, Google Antigravity, Cursor and others) each document their own skills folder. Then ask the agent to "run the cutout-story-engine setup".
 
+To update with `git pull` instead of copying again, keep the clone and link the skill folder to it:
+
+```
+# macOS / Linux
+ln -s "$PWD/cutout-story-engine/skills/cutout-story-engine" ~/.claude/skills/cutout-story-engine
+```
+```powershell
+# Windows (a junction needs no admin rights)
+New-Item -ItemType Junction -Path "$HOME\.claude\skills\cutout-story-engine" -Target "$PWD\cutout-story-engine\skills\cutout-story-engine"
+```
+
+From then on `git pull` in the clone updates the skill, and the engine in each series folder follows on its next workflow.
+
 ## Requirements
 
 - Node.js 18+, plus `ffmpeg` and `ffprobe` on your `PATH`
@@ -45,7 +58,7 @@ Episodes can be in any language; spoken lines follow the episode language, and n
 
 ## Updating
 
-Update the skill the way you installed it (for the plugin: `/plugin marketplace update cutout-story-engine`), then run **setup** in your series folder. The installer only refreshes engine files and backs up anything it replaces to `.engine-backup/`. It never touches `story-bible.json`, `sessions/`, `.env`, your characters and sets, audio caches or renders.
+Update the skill the way you installed it: `/plugin marketplace update cutout-story-engine` for the plugin, or `git pull` in your clone if you linked the skill folder to one. That is all. Before every workflow the skill checks the engine in your series folder and, if this version's engine differs, refreshes the engine files (backing up anything it replaces to `.engine-backup/`). It never touches `story-bible.json`, `sessions/`, `.env`, your characters and sets, audio caches or renders.
 
 Coming from the old template repository (pipeline under `.github/skills/cutout-animator/`)? Install the skill and run setup in that folder; it upgrades in place.
 
@@ -57,7 +70,7 @@ Coming from the old template repository (pipeline under `.github/skills/cutout-a
 | The installer and the Remotion engine (`assets/engine/`) | Your characters and sets (`src/components/...`) |
 | | Audio caches, `out/` renders, `.env`, `bin/rhubarb` |
 
-Back up your series folder yourself (or put it in your own private Git repository; its `.gitignore` already keeps secrets and caches out).
+Back up your series folder yourself, ideally as your own private Git repository: its `.gitignore` keeps secrets, caches, downloads and renders out and tracks your story, scripts, characters and sets.
 
 ## Rules at a glance
 

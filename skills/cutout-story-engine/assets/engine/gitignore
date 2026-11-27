@@ -1,12 +1,13 @@
 # Dependencies
 node_modules/
 
+# This folder is your series: story-bible.json, sessions/ and your characters and sets belong in your
+# own (private) repository. Only secrets, caches, downloads and renders stay out.
+
 # Secrets and local state
 .engine-backup/
 .env
 .setup-complete
-story-bible.json
-sessions/
 
 # Render output and QA stills
 out/
@@ -32,13 +33,6 @@ public/lipsync/*
 # Generated episode data
 src/data/*
 !src/data/.gitkeep
-
-# Generated characters and environments (registries stay tracked)
-src/components/characters/*.tsx
-src/components/backgrounds/*.tsx
-# Shared helpers every generated asset builds on
-!src/components/characters/rig.tsx
-!src/components/backgrounds/layer.tsx
 
 # OS / editor noise
 .DS_Store

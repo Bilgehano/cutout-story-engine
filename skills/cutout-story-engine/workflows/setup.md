@@ -8,7 +8,7 @@ Run `node -v` (Node 18+ required; if missing, stop and tell the user how to inst
 
 1. Install or update the engine with this skill's installer, run from the project folder (the skill's own path, not the project's):
    - New project: `node <skill>/scripts/init.mjs`
-   - Existing project (`.cutout-engine.json` with an older version, or engine files missing): `node <skill>/scripts/init.mjs --upgrade`. It refreshes engine files only, backs up every file it replaces to `.engine-backup/<timestamp>/`, and never touches `story-bible.json`, `sessions/`, `.env`, generated characters and environments, audio caches or `out/`. Tell the user which files it replaced.
+   - Existing project: `node <skill>/scripts/init.mjs --upgrade` (every other workflow runs `--sync`, which does the same only when the engine changed). It refreshes engine files only, backs up every file it replaces to `.engine-backup/<timestamp>/`, and never touches `story-bible.json`, `sessions/`, `.env`, generated characters and environments, audio caches or `out/`. Tell the user which files it replaced.
    - Projects from the old template layout (pipeline under `.github/skills/cutout-animator/`) upgrade the same way; afterwards the user may delete that old folder.
 2. Run `npm install`.
 

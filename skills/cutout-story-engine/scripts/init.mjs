@@ -2,15 +2,20 @@
 /**
  * Installs or upgrades the Cutout Story Engine in a project folder.
  *
- *   node <skill>/scripts/init.mjs [--target <dir>] [--upgrade] [--dry-run]
+ *   node <skill>/scripts/init.mjs [--target <dir>] [--upgrade | --sync] [--dry-run]
  *
- * Without --upgrade it only adds engine files that are missing, so it is safe to run in an
+ * Without a flag it only adds engine files that are missing, so it is safe to run in an
  * existing project. With --upgrade it also replaces engine files that differ from this skill's
- * version, after copying the old file to .engine-backup/<timestamp>/.
+ * copy, after copying the old file to .engine-backup/<timestamp>/.
+ *
+ * --sync is the automatic update run before every workflow: it does nothing when the project
+ * already has this exact engine (same fingerprint in .cutout-engine.json), and otherwise acts
+ * like --upgrade. So pulling a newer skill is all it takes to update every project.
  *
  * It never reads or writes the user's own data: .env, story-bible.json, sessions/, generated
  * characters and environments, refs/, bin/, audio caches and out/ are not part of the engine.
  */
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,7 +36,8 @@ const option = (name) => {
   const i = args.indexOf(name);
   return i >= 0 ? args[i + 1] : undefined;
 };
-const upgrade = flag("--upgrade");
+const sync = flag("--sync");
+const upgrade = sync || flag("--upgrade");
 const dryRun = flag("--dry-run");
 const target = path.resolve(option("--target") ?? process.cwd());
 
@@ -56,6 +62,14 @@ const engineFiles = (dir = ENGINE_DIR, prefix = "") =>
   });
 
 const projectPath = (rel) => RENAMED[rel] ?? rel;
+
+const files = engineFiles().sort();
+/** Fingerprint of this skill's engine, so --sync can tell in one step whether a project is current. */
+const fingerprint = (() => {
+  const hash = crypto.createHash("sha256");
+  for (const rel of files) hash.update(`${rel}\0`).update(fs.readFileSync(path.join(ENGINE_DIR, rel)).toString("utf8").replace(/\r\n/g, "\n")).update("\0");
+  return hash.digest("hex").slice(0, 16);
+})();
 const stamp = new Date().toISOString().replace(/[:.]/g, "-");
 const backupDir = path.join(target, ".engine-backup", stamp);
 const report = { created: [], updated: [], kept: [], unchanged: 0 };
@@ -70,7 +84,12 @@ const previous = fs.existsSync(path.join(target, MARKER))
   ? JSON.parse(fs.readFileSync(path.join(target, MARKER), "utf8"))
   : null;
 
-for (const rel of engineFiles()) {
+if (sync && previous?.fingerprint === fingerprint) {
+  console.log(`[init] Engine is up to date (${VERSION}, ${fingerprint}).`);
+  process.exit(0);
+}
+
+for (const rel of files) {
   const source = fs.readFileSync(path.join(ENGINE_DIR, rel));
   const name = projectPath(rel);
   const dest = path.join(target, name);
@@ -102,17 +121,19 @@ for (const dir of KEEP_DIRS) {
 if (!dryRun) {
   fs.writeFileSync(
     path.join(target, MARKER),
-    `${JSON.stringify({ engine: "cutout-story-engine", version: VERSION, updatedAt: new Date().toISOString() }, null, 2)}\n`,
+    `${JSON.stringify({ engine: "cutout-story-engine", version: VERSION, fingerprint, updatedAt: new Date().toISOString() }, null, 2)}\n`,
   );
 }
 
 const list = (items) => items.map((item) => `  - ${item}`).join("\n");
 console.log(`[init] Cutout Story Engine ${VERSION} -> ${target}${dryRun ? " (dry run, nothing written)" : ""}`);
-if (previous) console.log(`[init] Previously installed: ${previous.version}`);
+if (previous) console.log(`[init] Previously installed: ${previous.version}${previous.fingerprint ? ` (${previous.fingerprint})` : ""}, now ${fingerprint}.`);
 console.log(`[init] Created ${report.created.length}, updated ${report.updated.length}, unchanged ${report.unchanged}, kept ${report.kept.length}.`);
 if (report.updated.length) console.log(`[init] Replaced (old copies in .engine-backup/${stamp}/):\n${list(report.updated)}`);
 if (report.kept.length) {
   console.log(`[init] These engine files differ from version ${VERSION} and were left as they are:\n${list(report.kept)}`);
   console.log("[init] Run again with --upgrade to replace them (old copies are backed up).");
 }
-console.log("[init] Next: npm install, then continue the setup workflow.");
+const changed = [...report.created, ...report.updated];
+if (!previous) console.log("[init] Next: npm install, then continue the setup workflow.");
+else if (changed.some((name) => name.startsWith("package"))) console.log("[init] Dependencies changed: run npm install.");
