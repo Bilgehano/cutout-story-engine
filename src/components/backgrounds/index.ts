@@ -1,12 +1,11 @@
 import type { BackgroundComponent } from "../../types";
+import { collect } from "../registry";
 
 /**
- * Environment registry.
- * The /environment command adds one import + one entry per generated environment, e.g.
- *
- *   import { Bedroom } from "./Bedroom";
- *   export const backgroundRegistry: Record<string, BackgroundComponent> = { Bedroom };
- *
- * Keys MUST equal the environment `id` stored in story-bible.json.
+ * Environment registry, filled automatically: every `<Component>.tsx` in this folder that exports
+ * `export const <Component>` is registered under that name. Never edit this file per environment.
+ * Keys MUST equal the environment `component` stored in story-bible.json.
  */
-export const backgroundRegistry: Record<string, BackgroundComponent> = {};
+export const backgroundRegistry: Record<string, BackgroundComponent> = collect<BackgroundComponent>(
+  require.context("./", false, /^\.\/[A-Z][A-Za-z0-9_]*\.tsx$/),
+);

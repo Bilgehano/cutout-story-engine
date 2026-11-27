@@ -26,6 +26,10 @@ export type CharacterActorProps = {
   mood: Mood;
   prevMood: Mood;
   moodBlend: number;
+  eyesClosed?: number;
+  standUp?: number;
+  still?: boolean;
+  walking?: boolean;
   offsetX?: number;
   offsetY?: number;
   opacity?: number;

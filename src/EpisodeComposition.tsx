@@ -2,6 +2,7 @@ import React from "react";
 import {
   AbsoluteFill,
   Audio,
+  Easing,
   Sequence,
   interpolate,
   spring,
@@ -12,6 +13,10 @@ import {
 import { CharacterActor } from "./components/CharacterActor";
 import { backgroundRegistry } from "./components/backgrounds";
 import { Subtitle } from "./components/Subtitle";
+import { SceneTransitions } from "./components/Transitions";
+import { HeartOverlay, useHeartStyle } from "./components/HeartEffect";
+import { HeartAttack } from "./components/HeartAttack";
+import { EndCard, RoomEffects, TimeLabel, TitleCard, cameraStyle } from "./components/Overlays";
 import type {
   EpisodeData,
   EpisodeEvent,
@@ -145,6 +150,7 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const Background = backgroundRegistry[scene.environmentId];
+  const heart = useHeartStyle(scene);
 
   const door = heldState(
     sortedEvents(scene.events, "doorState"),
@@ -215,12 +221,33 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
     }
 
     const mouth = mouthAt(scene, frame, fps, id);
+    const lids = heldState(sortedEvents(scene.events, "eyes", id), frame, fps, 0, (v) => (v === "closed" ? 1 : 0));
+    const rising = sortedEvents(scene.events, "standUp", id)[0];
+    const falling = sortedEvents(scene.events, "fall", id)[0];
+    const dropped = falling
+      ? interpolate(frame, [falling.frame, falling.frame + falling.durationInFrames], [1, 0], {
+          extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.in(Easing.cubic),
+        })
+      : null;
+    const standUp = dropped !== null ? dropped : rising
+      ? interpolate(frame, [rising.frame, rising.frame + rising.durationInFrames], [0, 1], {
+          extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic),
+        })
+      : 0;
+    let x = sceneCharacter.x;
+    let walking = false;
+    for (const walk of sortedEvents(scene.events, "walk", id)) {
+      if (frame < walk.frame) break;
+      x = interpolate(frame, [walk.frame, walk.frame + walk.durationInFrames], [x, Number(walk.value)], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+      walking = frame < walk.frame + walk.durationInFrames;
+    }
     return (
       <CharacterActor
         key={id}
         characterId={id}
         pose={sceneCharacter.pose}
-        x={sceneCharacter.x}
+        x={x}
+        walking={walking}
         flip={sceneCharacter.flip}
         outfit={sceneCharacter.outfit}
         conditions={sceneCharacter.conditions}
@@ -233,21 +260,36 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
         moodBlend={mood.blend}
         offsetX={offsetX}
         offsetY={offsetY}
+        eyesClosed={interpolate(lids.blend, [0, 1], [lids.prev, lids.cur])}
+        standUp={standUp}
+        still
         opacity={opacity}
       />
     );
   });
 
+  const attack = scene.effect === "heartAttack" ? scene.characters[0] : null;
   const progress = Math.min(1, frame / 14);
   const time = activeSegment ? (frame - activeSegment.startFrame) / fps : -1;
   const caption = activeSegment?.captions?.find(cue => time >= cue.start && time < cue.end);
   return (
     <AbsoluteFill>
+      {attack && Background ? (
+        <HeartAttack
+          scene={scene}
+          characterId={attack.characterId}
+          Background={Background}
+          thinking={activeSegment?.lineType === "thought"}
+          {...mouthAt(scene, frame, fps, attack.characterId)}
+        />
+      ) : (<>
+      <AbsoluteFill style={heart}>
       <AbsoluteFill style={{
-        filter: scene.perspective === "memory" ? "sepia(0.45) saturate(0.7) blur(1.6px)" : undefined,
+        filter: scene.perspective === "memory" ? "grayscale(1) brightness(0.72) contrast(1.18)" : undefined,
         clipPath: scene.transition === "blink" ? `inset(${50 * (1 - progress)}% 0)` : undefined,
         backgroundColor: "#000",
       }}>
+      <AbsoluteFill style={cameraStyle(scene.events, frame)}>
       {Background ? (
         <Background
           timeOfDay={scene.timeOfDay}
@@ -270,10 +312,16 @@ const SceneView: React.FC<{ scene: EpisodeScene }> = ({ scene }) => {
           Environment "{scene.environmentId}" is not registered
         </AbsoluteFill>
       )}
+      <RoomEffects events={scene.events} />
       </AbsoluteFill>
-      {(scene.transition === "flash" || scene.transition === "fadeFromBlack") && progress < 1 ? (
-        <AbsoluteFill style={{background:scene.transition === "flash" ? "#fff6e3" : "#000", opacity:1-progress}} />
-      ) : null}
+      </AbsoluteFill>
+      </AbsoluteFill>
+      <HeartOverlay scene={scene} />
+      </>)}
+      <SceneTransitions scene={scene} />
+      <TimeLabel text={scene.label} />
+      <TitleCard scene={scene} />
+      <EndCard scene={scene} />
 
       {scene.segments.map((segment) => (
         <Sequence

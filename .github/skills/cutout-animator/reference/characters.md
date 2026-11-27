@@ -29,7 +29,7 @@ Mandatory behaviours:
 - **eyeLook:** pupils translate by `eyeLook.x * 7` and `eyeLook.y * 5` units (clamped inside the eye white).
 - **Mood eyebrows:** define a target `{ lift, tilt, curve }` per mood; blend `prev -> current` using `moodBlend` (already a Remotion `spring` computed by the composition). Mouth corners may follow the mood only while the mouth is `X`.
 - **Gestures:** only when `isTalking === true`. Forearms rotate around the elbow pivot with `Math.sin` at different phases/frequencies per arm. Amplitude by `gestureIntensity`: `calm 6deg`, `moderate 14deg`, `expressive 26deg`. When `isTalking` is false the arms ease back to a rest angle with `spring`.
-- **Poses:** `standing` draws the full body; `sitting_desk` draws torso up, hands resting/gesturing above the desk line (the desk is a foreground layer of the environment).
+- **Poses:** `standing` draws the full body; `sitting_desk` draws torso up, hands resting/gesturing above the desk line (the desk is a foreground layer of the environment); `lying_floor` draws the full body collapsed horizontally, inside the 600-unit box width, resting on its bottom edge (the floor line), with no standing shadow. The environment must keep that floor area unobstructed.
 
 ## 3. Rhubarb viseme switch-case
 

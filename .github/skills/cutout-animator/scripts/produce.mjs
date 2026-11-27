@@ -232,7 +232,7 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
     ambienceFile = (await generateAmbience(scene.ambience)).publicPath;
   }
 
-  const end = scene.durationSec * FPS;
+  const end = Math.round(scene.durationSec * FPS);
 
   const sfx = [];
   for (const cue of scene.sfx ?? []) {
@@ -259,6 +259,9 @@ async function produceScene(scene, sceneIndex, draft, ctx) {
     environmentId: scene.environmentId,
     transition: scene.transition,
     perspective: scene.perspective,
+    exit: scene.exit,
+    effect: scene.effect,
+    label: scene.label,
     timeOfDay: scene.timeOfDay ?? "day",
     ambienceFile,
     characters: scene.characters.map((c) => ({

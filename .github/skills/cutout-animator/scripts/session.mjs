@@ -63,10 +63,12 @@ export function validatePlan(raw, bible, number) {
   for (const [collection] of Object.values(kinds)) {
     unique(p[collection].map((a) => a.id), `${collection} id`);
     unique(p[collection].map((a) => a.component.toLowerCase()), `${collection} component`);
+    // Registries discover components by file name and are looked up by id, so the two must match.
+    p[collection].forEach((a) => planned(a.component === a.id, `${a.id}: component must equal its id (${a.component}).`));
   }
   planned(!p.characters.some((c) => c.id === "narrator"), "Reserved narrator ID.");
   unique(p.scenes.map((s) => s.id), "scene id");
-  planned(p.durationSec === p.scenes.reduce((n, s) => n + s.durationSec, 0), "Scene lengths do not sum to the episode length.");
+  planned(frames(p.durationSec) === p.scenes.reduce((n, s) => n + frames(s.durationSec), 0), "Scene lengths do not sum to the episode length.");
   const cast = new Map(p.characters.map((a) => [a.id, a]));
   for (const s of p.scenes) {
     const require = (ok, why) => planned(ok, `${s.id}: ${why}.`);
@@ -97,8 +99,13 @@ export function validatePlan(raw, bible, number) {
       end = frames(line.atSec) + frames(line.durationSec);
     }
     for (const e of s.events) {
-      if (["eyeLook","mood","jump","characterEnter"].includes(e.type)) require(s.characters.some((c) => c.characterId === e.characterId), "event target not on screen");
-      const choices = { mood: ["neutral","happy","sad","angry","surprised","worried"], characterEnter: ["left","right"], doorState: ["closed","ajar","open"], eyeLook: ["center","left","right","up","down","phone"] };
+      if (["eyeLook","mood","jump","characterEnter","eyes","standUp","fall","walk"].includes(e.type)) require(s.characters.some((c) => c.characterId === e.characterId), "event target not on screen");
+      const within = (v, min, max) => typeof v === "number" && v >= min && v <= max;
+      if (e.type === "walk") require(within(e.value, 0, 1), "walk needs a target x between 0 and 1");
+      if (e.type === "camera") require(within(e.value?.x, 0, 1080) && within(e.value?.y, 0, 1920) && within(e.value?.zoom, 1, 6), "camera needs {x, y, zoom}");
+      if (e.type === "endCard") require(typeof e.value === "string" && e.value.trim(), "endCard needs its text");
+      if (e.type === "title") require(typeof e.value === "string" && e.value.trim() && e.value.length <= 60, "title needs its text (max 60 characters)");
+      const choices = { mood: ["neutral","happy","sad","angry","surprised","worried"], characterEnter: ["left","right"], doorState: ["closed","ajar","open"], eyes: ["open","closed"], eyeLook: ["center","left","right","up","down","phone"] };
       if (e.type in choices) {
         const unit = (v, min) => typeof v === "number" && v >= min && v <= 1;
         require(choices[e.type].includes(e.value) || (e.type === "doorState" && unit(e.value,0)) ||

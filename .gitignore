@@ -35,6 +35,9 @@ src/data/*
 # Generated characters and environments (registries stay tracked)
 src/components/characters/*.tsx
 src/components/backgrounds/*.tsx
+# Shared helpers every generated asset builds on
+!src/components/characters/rig.tsx
+!src/components/backgrounds/layer.tsx
 
 # OS / editor noise
 .DS_Store

@@ -9,8 +9,8 @@ Canvas: **1080x1920 (9:16), 30 FPS**, 100% React + SVG in Remotion. Outline: `3p
 - `CharacterProps`: `pose`, `mouthShape`, `isTalking`, `eyeLook {x,y}` (-1..1), `mood`, `prevMood`, `moodBlend` (0..1), `gestureIntensity`, `flip`, `colors`.
 - `BackgroundProps`: `timeOfDay`, `doorState` (0..1), `phoneVibrate`, `lightFlicker` (0..1), `children` (the character slot).
 - Characters live in a `CHARACTER_BOX` of 600x1200 SVG units; the bottom-center of the box is the foot anchor placed on `CHARACTER_FLOOR_Y` (1500px). Draw with `viewBox="0 0 600 1200"`, `width="100%"`, `height="100%"`.
-- Moods: `neutral | happy | sad | angry | surprised | worried`. Poses: `standing | sitting_desk`.
-- Registries (`characters/index.ts`, `backgrounds/index.ts`) map `id` -> component. Keys must equal the ids in `story-bible.json`.
+- Moods: `neutral | happy | sad | angry | surprised | worried`. Poses: `standing | sitting_desk | lying_floor`.
+- Registries (`characters/index.ts`, `backgrounds/index.ts`) are automatic: every `<Component>.tsx` exporting `export const <Component>` is registered under that name, and `component` must equal `id`. Never edit the registries; generated characters and environments stay untracked, shared helpers (`rig.tsx`, `layer.tsx`) are tracked.
 
 ## References (load on demand)
 

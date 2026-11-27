@@ -20,7 +20,7 @@ export type Mood =
   | "angry"
   | "surprised"
   | "worried";
-export type Pose = "standing" | "sitting_desk";
+export type Pose = "standing" | "sitting_desk" | "lying_floor";
 export type TimeOfDay = "day" | "sunset" | "night";
 export type LineType = "dialogue" | "thought" | "narration";
 export type GestureIntensity = "calm" | "moderate" | "expressive";
@@ -42,6 +42,13 @@ export type CharacterProps = {
   outfit?: string;
   /** Visible states such as "acne" or "tired"; several can apply at once. */
   conditions?: string[];
+  /** 0 = eyes open, 1 = shut. */
+  eyesClosed?: number;
+  /** 0..1 rise from the floor; only used with the lying_floor pose. */
+  standUp?: number;
+  walking?: boolean;
+  /** No speech gestures or head tilt. */
+  still?: boolean;
   /** Mirror the character horizontally. */
   flip?: boolean;
   /** Optional color overrides (hair, skin, outfit, ...). */
@@ -69,7 +76,16 @@ export type EventType =
   | "characterEnter"
   | "eyeLook"
   | "mood"
-  | "jump";
+  | "jump"
+  | "eyes"
+  | "standUp"
+  | "fall"
+  | "walk"
+  | "camera"
+  | "knock"
+  | "notify"
+  | "endCard"
+  | "title";
 
 export type EpisodeEvent = {
   type: EventType;
@@ -77,7 +93,7 @@ export type EpisodeEvent = {
   frame: number;
   durationInFrames: number;
   characterId?: string;
-  value?: string | number | boolean | { x: number; y: number };
+  value?: string | number | boolean | { x: number; y: number; zoom?: number };
 };
 
 export type EpisodeSegment = {
@@ -113,7 +129,11 @@ export type SceneCharacter = {
 };
 
 export type EpisodeScene = {
-  transition?: "cut" | "blink" | "flash" | "fadeFromBlack";
+  transition?: "cut" | "blink" | "flash" | "fadeFromBlack" | "eyesOpen";
+  exit?: "flash" | "eyesClose";
+  effect?: "heartAttack" | "dying";
+  /** Small time stamp shown at the top of the scene. */
+  label?: string;
   perspective?: "present" | "memory";
   id: string;
   environmentId: string;
