@@ -7,7 +7,7 @@
       "name": "cutout-story-engine",
       "source": "./",
       "description": "Plan, voice, lip-sync and render 9:16 animated story episodes with code-drawn SVG puppets.",
-      "version": "1.1.0"
+      "version": "1.1.1"
     }
   ]
 }

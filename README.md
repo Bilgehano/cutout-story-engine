@@ -70,7 +70,7 @@ Coming from the old template repository (pipeline under `.github/skills/cutout-a
 | The installer and the Remotion engine (`assets/engine/`) | Your characters and sets (`src/components/...`) |
 | | Audio caches, `out/` renders, `.env`, `bin/rhubarb` |
 
-Back up your series folder yourself, ideally as your own private Git repository: its `.gitignore` keeps secrets, caches, downloads and renders out and tracks your story, scripts, characters and sets.
+Back up your series folder yourself. Its `.gitignore` keeps your story, characters and sets, secrets, caches and renders out of Git, so nothing of your series ends up in a repository by accident.
 
 ## Rules at a glance
 

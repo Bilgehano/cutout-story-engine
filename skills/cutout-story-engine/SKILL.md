@@ -35,7 +35,7 @@ Canvas: **1080x1920 (9:16), 30 FPS**, 100% React + SVG in Remotion. Outline: `3p
 - `BackgroundProps`: `timeOfDay`, `doorState` (0..1), `phoneVibrate`, `lightFlicker` (0..1), `children` (the character slot).
 - Characters live in a `CHARACTER_BOX` of 600x1200 SVG units; the bottom-center of the box is the foot anchor placed on `CHARACTER_FLOOR_Y` (1500px). Draw with `viewBox="0 0 600 1200"`, `width="100%"`, `height="100%"`.
 - Moods: `neutral | happy | sad | angry | surprised | worried`. Poses: `standing | sitting_desk | lying_floor`.
-- Registries (`src/components/characters/index.ts`, `src/components/backgrounds/index.ts`) are automatic: every `<Component>.tsx` exporting `export const <Component>` is registered under that name, and `component` must equal `id`. Never edit the registries. Generated characters and environments belong to the series; the shared helpers `rig.tsx` and `layer.tsx` are engine files.
+- Registries (`src/components/characters/index.ts`, `src/components/backgrounds/index.ts`) are automatic: every `<Component>.tsx` exporting `export const <Component>` is registered under that name, and `component` must equal `id`. Never edit the registries. Generated characters and environments belong to the series and stay out of version control; the shared helpers `rig.tsx` and `layer.tsx` are engine files.
 - On-screen words the engine draws itself (knock lettering, chat reactions) follow the episode `languageCode` via `src/components/locale.ts`; spoken lines are always written in the episode language.
 
 ## References (load on demand)
